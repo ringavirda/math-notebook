@@ -17,7 +17,8 @@ const show = (arg: unknown): string => {
 /**
  * Method decorator for async methods of a class with a `logger`. Writes
  * `<key>(<arguments>) took <n> ms` at debug level, or `<key>(<arguments>) failed after <n> ms`
- * and rethrows; `<n>` is whole milliseconds.
+ * and rethrows; `<n>` is whole milliseconds and covers everything the method's promise waits on,
+ * including time queued behind other calls.
  * An argument that cannot be serialized as JSON (circular, BigInt) is printed with `String`. Works only on a method that returns a Promise.
  * @param target the class prototype.
  * @param key the method name.
