@@ -8,16 +8,18 @@ around them, each in its own package.
 
 ## Layout
 
-- `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the services, `commands.ts`
+- `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the command line, `commands.ts`
   holds the commands, `format.ts` the output.
 - `apps/api` the same libraries behind HTTP on `node:http`: `routes.ts` maps requests to the
-  notebook service, `server.ts` is the hosted service, `requests.http` holds the requests to send.
+  notebook service, `server.ts` is the hosted service, `services.ts` binds it, `requests.http` holds the requests to send.
 - `packages/interpreter` lexer, parser, analyzer and evaluator of the language, with errors that
   carry the span of the input they come from.
 - `packages/notebook` the domain: notebooks, dependencies, the service, events and the repository
   port.
 - `packages/storage-sqlite` the repository on SQLite through Drizzle, with migrations.
 - `packages/storage-mongo` the repository on MongoDB through the driver.
+- `packages/notebook-setup` `addNotebook`, the wiring both apps share: clock, event bus, the chosen
+  repository, the service and the event logging, with the settings they read.
 - `packages/hosting` the application host: configuration, the stderr logger, hosted services, start and stop.
 - `packages/cli` terminal input and output, the command executor with its middleware, one-shot
   and interactive modes.
@@ -54,7 +56,7 @@ A line starting with `:` is a command, any other line is evaluated.
 | Variable             | Default                              | Meaning                               |
 | -------------------- | ------------------------------------ | ------------------------------------- |
 | `MATHBOOK_STORAGE`   | `sqlite`                             | `sqlite` or `mongo`                   |
-| `MATHBOOK_DB`        | `apps/cli/data/notebook.db`          | SQLite file, or `:memory:`            |
+| `MATHBOOK_DB`        | `data/notebook.db`                   | SQLite file, or `:memory:`            |
 | `MATHBOOK_MONGO_URL` | `mongodb://localhost:27017/mathbook` | MongoDB URL; the path is the database |
 | `MATHBOOK_NOTEBOOK`  | `main`                               | notebook a session starts in          |
 | `PORT`               | `3000`                               | port of the API (`apps/api` only)     |

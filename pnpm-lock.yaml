@@ -247,6 +247,9 @@ importers:
       '@mathbook/notebook':
         specifier: workspace:*
         version: link:../../packages/notebook
+      '@mathbook/notebook-setup':
+        specifier: workspace:*
+        version: link:../../packages/notebook-setup
       '@mathbook/storage-mongo':
         specifier: workspace:*
         version: link:../../packages/storage-mongo
@@ -299,6 +302,9 @@ importers:
       '@mathbook/notebook':
         specifier: workspace:*
         version: link:../../packages/notebook
+      '@mathbook/notebook-setup':
+        specifier: workspace:*
+        version: link:../../packages/notebook-setup
       '@mathbook/storage-mongo':
         specifier: workspace:*
         version: link:../../packages/storage-mongo
@@ -426,6 +432,46 @@ importers:
       '@mathbook/hosting':
         specifier: workspace:*
         version: link:../hosting
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.4
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@types/node@24.19.2)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
+
+  packages/notebook-setup:
+    dependencies:
+      '@mathbook/common':
+        specifier: workspace:*
+        version: link:../common
+      '@mathbook/hosting':
+        specifier: workspace:*
+        version: link:../hosting
+      '@mathbook/notebook':
+        specifier: workspace:*
+        version: link:../notebook
+      '@mathbook/storage-mongo':
+        specifier: workspace:*
+        version: link:../storage-mongo
+      '@mathbook/storage-sqlite':
+        specifier: workspace:*
+        version: link:../storage-sqlite
+      inversify:
+        specifier: 'catalog:'
+        version: 8.3.0(reflect-metadata@0.2.2)
+      reflect-metadata:
+        specifier: 'catalog:'
+        version: 0.2.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2

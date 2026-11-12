@@ -1,14 +1,15 @@
 import "reflect-metadata";
 import { ConfigError, createHostBuilder } from "@mathbook/hosting";
+import { addNotebook } from "@mathbook/notebook-setup";
 import { runApp } from "./app.js";
 import { CONFIG, configSchema } from "./config.js";
-import { REPOSITORY_SERVICE, addServices } from "./services.js";
+import { addServices } from "./services.js";
 
 try {
-  const builder = createHostBuilder()
-    .configuration(CONFIG, configSchema)
-    .logging()
-    .hosted(REPOSITORY_SERVICE);
+  const builder = addNotebook(
+    createHostBuilder().configuration(CONFIG, configSchema).logging(),
+    CONFIG,
+  );
   addServices(builder.services);
   process.exitCode = await builder.build().run(runApp);
 } catch (error) {
