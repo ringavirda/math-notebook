@@ -7,8 +7,8 @@ import { REPOSITORY_SERVICE } from "@mathbook/notebook-setup";
 import type { HostedService } from "@mathbook/hosting";
 import type { NotebookService } from "@mathbook/notebook";
 import { createApi } from "../../src/app.js";
-import { HTTP_SERVICE } from "../../src/services.js";
-import { HttpService } from "../../src/http/server.js";
+import { HTTP_SERVICE, createRouter } from "../../src/services.js";
+import { HttpService } from "@mathbook/http";
 
 function recordingLogger() {
   const lines: string[] = [];
@@ -31,7 +31,7 @@ afterEach(async () => {
 
 async function serve(service: NotebookService) {
   const { lines, logger } = recordingLogger();
-  const http = new HttpService(service, 0, logger);
+  const http = new HttpService(createRouter(service, logger), 0, logger);
   await http.start();
   stoppers.push(() => http.stop());
   const port = /localhost:(\d+)/.exec(lines[0])![1];

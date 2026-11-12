@@ -13,6 +13,7 @@
   "dependencies": {
     "@mathbook/common": "workspace:*",
     "@mathbook/hosting": "workspace:*",
+    "@mathbook/http": "workspace:*",
     "@mathbook/interpreter": "workspace:*",
     "@mathbook/notebook": "workspace:*",
     "@mathbook/notebook-setup": "workspace:*",

@@ -6,7 +6,23 @@ import {
   StorageError,
   type NotebookService,
 } from "@mathbook/notebook";
-import { handle } from "../../src/http/routes.js";
+import type { Logger } from "@mathbook/common";
+import { createRouter } from "../../src/services.js";
+
+function handle(
+  service: NotebookService,
+  call: { method: string; url: string; body: string },
+  onUnexpected: (error: unknown) => void,
+) {
+  const silent = () => {};
+  const logger: Logger = {
+    debug: silent,
+    info: silent,
+    warn: silent,
+    error: onUnexpected,
+  };
+  return createRouter(service, logger).handle(call);
+}
 
 describe("handle", () => {
   it("answers 500 Unexpected error and reports the cause for a storage failure", async () => {
@@ -26,7 +42,7 @@ describe("handle", () => {
     expect(reply.body).toEqual({
       error: { stage: "server", message: "Unexpected error" },
     });
-    expect(onUnexpected).toHaveBeenCalledWith(cause);
+    expect(onUnexpected).toHaveBeenCalledWith(cause.stack);
   });
 
   it("answers 404 for an empty path segment without calling the service", async () => {

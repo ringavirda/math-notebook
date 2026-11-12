@@ -241,6 +241,9 @@ importers:
       '@mathbook/hosting':
         specifier: workspace:*
         version: link:../../packages/hosting
+      '@mathbook/http':
+        specifier: workspace:*
+        version: link:../../packages/http
       '@mathbook/interpreter':
         specifier: workspace:*
         version: link:../../packages/interpreter
