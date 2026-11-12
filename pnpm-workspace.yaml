@@ -17,6 +17,7 @@ catalog:
   "@types/better-sqlite3": ^9.6.0
   mongodb: ^7.8.0
   mongodb-memory-server: ^11.3.0
+  concurrently: ^10.0.6
 
 allowBuilds:
   better-sqlite3: false

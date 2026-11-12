@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/main.js",
+    "dev": "tsc --incremental && concurrently --kill-others --raw \"tsc --watch --incremental --preserveWatchOutput\" \"node --watch dist/main.js\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "clean": "rimraf dist"
@@ -25,6 +26,8 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "concurrently": "catalog:",
+    "mongodb-memory-server": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
