@@ -89,6 +89,17 @@ describe("NotebookService with the memory repository", () => {
     expect(failed.map((r) => r.source)).toEqual(["1 $ 2", "x = y"]);
   });
 
+  it("stores and publishes a failed line trimmed", async () => {
+    const { service, published } = setup();
+    await expect(service.run("main", "  1 / 0  ")).rejects.toThrow();
+    const [record] = await service.history("main", {
+      limit: 1,
+      failedOnly: true,
+    });
+    expect(record.source).toBe("1 / 0");
+    expect(published[0]).toMatchObject({ type: "failed", source: "1 / 0" });
+  });
+
   it("records a refused define as a domain failure and publishes failed", async () => {
     const { service, published } = setup();
     await service.run("main", "x = 1");

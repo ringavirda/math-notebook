@@ -143,6 +143,12 @@ export class Notebook {
         if (line.kind !== "definition") {
           throw new SemanticError("Not a definition", line.body.span);
         }
+        if (parsed.has(line.name)) {
+          throw new SemanticError(
+            `'${line.name}' is defined twice`,
+            line.nameSpan,
+          );
+        }
         parsed.set(line.name, line);
       }
       for (const definitionName of dependencyOrder(parsed)) {

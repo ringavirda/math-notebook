@@ -19,12 +19,14 @@ export interface Definition {
   nameSpan: Span;
 }
 
+/** A bare expression to evaluate. */
 export interface Expression {
   kind: "expression";
   body: ExprNode;
   source: string;
 }
 
+/** One parsed input line. */
 export type Line = Definition | Expression;
 
 class Parser {
@@ -51,7 +53,10 @@ class Parser {
     const bad = () => {
       const span = {
         start: this.tokens[0].span.start,
-        end: this.tokens[equals].span.start,
+        end:
+          left.length === 0
+            ? this.tokens[equals].span.end
+            : this.tokens[equals].span.start,
       };
       return new ParseError(
         "The left side of '=' must be a name or name(params)",

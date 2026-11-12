@@ -24,7 +24,9 @@ export interface HistoryQuery {
 
 /** Where notebooks and their history are kept. */
 export interface NotebookRepository {
+  /** Prepares the storage for use; call once before any other method. */
   open(): Promise<void>;
+  /** Releases the storage; no other method may be called afterwards. */
   close(): Promise<void>;
   /** Names of the saved notebooks. */
   names(): Promise<readonly string[]>;
@@ -35,6 +37,7 @@ export interface NotebookRepository {
   load(name: string): Promise<Notebook>;
   /** Replaces the stored definitions of the notebook. */
   save(notebook: Notebook): Promise<void>;
+  /** Adds one record to the notebook's history. */
   appendEvaluation(record: EvaluationRecord): Promise<void>;
   /** @returns the notebook's records, newest first, filtered and limited by `query`. */
   history(

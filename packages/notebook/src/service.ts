@@ -54,7 +54,7 @@ export class NotebookService implements HasLogger {
       const message = (error as Error).message;
       await this.repository.appendEvaluation({
         notebook,
-        source: line,
+        source: line.trim(),
         kind: kindOf(line),
         result: null,
         error: { stage, message },
@@ -63,7 +63,7 @@ export class NotebookService implements HasLogger {
       this.events.publish({
         type: "failed",
         notebook,
-        source: line,
+        source: line.trim(),
         stage,
         message,
       });

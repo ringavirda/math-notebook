@@ -73,6 +73,12 @@ describe("parse", () => {
     expect(parse("f(1)")).toMatchObject({ kind: "expression", source: "f(1)" });
   });
 
+  it("spans an empty left side of '=' on the '=' token", () => {
+    expect(() => parse("= 1")).toThrow(
+      expect.objectContaining({ span: { start: 0, end: 1 } }),
+    );
+  });
+
   it("gives nodes their spans", () => {
     expect(parse("(1 + 2) * 3").body.span).toEqual({ start: 0, end: 11 });
     expect(parse("-x").body.span).toEqual({ start: 0, end: 2 });

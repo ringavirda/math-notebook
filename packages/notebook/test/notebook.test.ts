@@ -73,6 +73,12 @@ describe("Notebook", () => {
     expect(result).toMatchObject({ recomputed: [{ name: "b", value: 11 }] });
   });
 
+  it("drops the value of a variable redefined as a function", () => {
+    const notebook = notebookWith("x = 1");
+    notebook.run("x(a) = a");
+    expect(notebook.definitions()[0]).not.toHaveProperty("value");
+  });
+
   it("keeps the place of a redefinition", () => {
     const notebook = notebookWith("a = 1", "b = 2");
     notebook.run("a = 3");
@@ -175,5 +181,8 @@ describe("Notebook", () => {
       StorageError,
     );
     expect(() => Notebook.restore("main", ["x = "])).toThrow(StorageError);
+    expect(() => Notebook.restore("main", ["a = 1", "a = 2"])).toThrow(
+      StorageError,
+    );
   });
 });

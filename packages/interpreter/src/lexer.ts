@@ -1,5 +1,6 @@
 import { LexError, type Span } from "./errors.js";
 
+/** A lexical unit of a line; `text` is the source slice, `span` its position in it. */
 export interface Token {
   kind:
     | "number"

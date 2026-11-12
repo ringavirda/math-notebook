@@ -48,6 +48,7 @@ export abstract class ExprNode {
   abstract toString(): string;
 }
 
+/** A numeric literal. */
 export class NumberNode extends ExprNode {
   readonly precedence = ATOM;
 
@@ -71,6 +72,7 @@ export class NumberNode extends ExprNode {
   }
 }
 
+/** A reference to a variable or parameter. */
 export class NameNode extends ExprNode {
   readonly precedence = ATOM;
 
@@ -98,6 +100,7 @@ export class NameNode extends ExprNode {
   }
 }
 
+/** Negation of `operand`. */
 export class UnaryNode extends ExprNode {
   readonly precedence = UNARY;
 
@@ -121,6 +124,7 @@ export class UnaryNode extends ExprNode {
   }
 }
 
+/** `left operator right` for `+ - * / % ^`. */
 export class BinaryNode extends ExprNode {
   readonly precedence: number;
 
@@ -171,6 +175,7 @@ export class BinaryNode extends ExprNode {
   }
 }
 
+/** A call of the function `callee` with `args`. */
 export class CallNode extends ExprNode {
   readonly precedence = ATOM;
 
