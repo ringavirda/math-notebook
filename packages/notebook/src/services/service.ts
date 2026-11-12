@@ -45,7 +45,10 @@ function stageOf(error: unknown): ErrorStage | undefined {
   return undefined;
 }
 
-/** The use cases of the notebook app; each call works on one notebook, loaded and saved by name; one that does not exist is refused. */
+/**
+ * The use cases of the notebook app; each call works on one notebook, loaded and saved by name;
+ * one that does not exist is refused.
+ */
 export class NotebookService implements HasLogger {
   constructor(
     private readonly repository: NotebookRepository,

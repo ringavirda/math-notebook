@@ -103,8 +103,24 @@ DELETE {{host}}/notebooks/main/definitions/price
 ### The failed evaluations
 GET {{host}}/notebooks/main/history?limit=10&failed
 
+### Create a notebook only for this demo
+POST {{host}}/notebooks
+Content-Type: application/json
+
+{
+    "name": "scratch"
+}
+
+### Put a line in it
+POST {{host}}/notebooks/scratch/run
+Content-Type: application/json
+
+{
+    "line": "x = 1"
+}
+
 ### Rename the notebook
-PATCH {{host}}/notebooks/main
+PATCH {{host}}/notebooks/scratch
 Content-Type: application/json
 
 {
