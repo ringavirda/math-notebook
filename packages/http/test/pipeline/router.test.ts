@@ -58,7 +58,9 @@ describe("Router.handle", () => {
   it("reads a leading double slash as an empty segment, not a host", async () => {
     const router = new Router();
     router.route("GET", "/notebooks", ok);
-    expect((await router.handle(call("GET", "//x/notebooks"))).status).toBe(404);
+    expect((await router.handle(call("GET", "//x/notebooks"))).status).toBe(
+      404,
+    );
   });
 
   it("answers 404 for an empty leading segment a parameter would take", async () => {
