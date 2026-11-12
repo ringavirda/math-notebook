@@ -272,6 +272,23 @@ describe("MongoNotebookRepository", () => {
     );
   });
 
+  it("saves with a single update command", async () => {
+    lines = [];
+    await repository.save(priced());
+    expect(lines).toEqual(["update notebooks"]);
+  });
+
+  it("orders records with the same time newest inserted first", async () => {
+    await repository.appendEvaluation(record("1", 1));
+    await repository.appendEvaluation(record("2", 1));
+    await repository.appendEvaluation(record("3", 1));
+    const found = await repository.history("main", {
+      limit: 10,
+      failedOnly: false,
+    });
+    expect(found.map((r) => r.source)).toEqual(["3", "2", "1"]);
+  });
+
   it("keeps notebook names unique", async () => {
     await repository.save(new Notebook("main"));
     await expect(

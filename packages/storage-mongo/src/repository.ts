@@ -59,18 +59,28 @@ export class MongoNotebookRepository implements NotebookRepository {
     });
   }
 
+  /**
+   * Connects and creates the indexes. Must be called before any other method.
+   *
+   * @throws the driver's connection error when the server cannot be reached.
+   */
   async open(): Promise<void> {
     await this.client.connect();
     const named = /^mongodb(\+srv)?:\/\/[^/]+\/[^?]/.test(this.url);
     this.database = this.client.db(named ? undefined : DEFAULT_DATABASE);
     await this.notebooks().createIndex({ name: 1 }, { unique: true });
-    await this.evaluations().createIndex({ notebook: 1, at: -1 });
+    await this.evaluations().createIndex({ notebook: 1, at: -1, _id: -1 });
   }
 
   async close(): Promise<void> {
     await this.client.close();
   }
 
+  /**
+   * @throws {Error} "The repository is not open" when called before `open()` and, like every
+   * method below, when called after it.
+   * @throws {StorageError} when a stored document fails its schema.
+   */
   async names(): Promise<readonly string[]> {
     const documents = await this.notebooks()
       .find({}, { projection: { name: 1 } })
