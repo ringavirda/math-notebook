@@ -393,6 +393,28 @@ importers:
         specifier: 'catalog:'
         version: 5.1.0(@types/node@24.19.2)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
 
+  packages/http:
+    dependencies:
+      '@mathbook/common':
+        specifier: workspace:*
+        version: link:../common
+      '@mathbook/hosting':
+        specifier: workspace:*
+        version: link:../hosting
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.4
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@types/node@24.19.2)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
+
   packages/interpreter:
     devDependencies:
       '@types/node':

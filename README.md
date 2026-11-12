@@ -26,6 +26,8 @@ around them, each in its own package.
 - `packages/hosting` the application host: configuration, the stderr logger, hosted services, start and stop.
 - `packages/cli` `models/` the command type, `terminal/` the terminal and its one-shot and
   interactive modes, `pipeline/` the command executor with its middleware and error mapping.
+- `packages/http` `models/` the request and reply, `pipeline/` the router with its middleware and error
+  mapping, `server/` the HTTP service that hosts it.
 - `packages/common` `events/` the typed event bus, `logging/` the logger interface and the
   `logged` method decorator.
 
