@@ -15,6 +15,13 @@ class OtherError extends Error {
   override name = "OtherError";
 }
 
+const quiet = {
+  selectors: ["go"],
+  params: [],
+  description: "Does nothing.",
+  action: () => {},
+};
+
 function failing(error: unknown) {
   const harness = createHarness();
   harness.executor.registerCommand({
@@ -81,11 +88,12 @@ describe("mapErrors", () => {
 describe("timing", () => {
   it("logs the first selector and whole milliseconds at debug", async () => {
     const { executor, logger } = createHarness();
+    executor.registerCommand(quiet);
     executor.use(timing(logger));
-    await executor.execute("help");
+    await executor.execute("go");
     expect(logger.lines).toHaveLength(1);
     expect(logger.lines[0]![0]).toBe("debug");
-    expect(logger.lines[0]![1]).toMatch(/^help took \d+ ms$/);
+    expect(logger.lines[0]![1]).toMatch(/^go took \d+ ms$/);
   });
 
   it("logs also when the command throws", async () => {
@@ -97,10 +105,11 @@ describe("timing", () => {
 
   it("wraps the steps added after it", async () => {
     const { executor, logger } = createHarness();
+    executor.registerCommand(quiet);
     executor.use(timing(logger));
     executor.use(checkArguments);
-    expect(await executor.execute("help a b")).toBe("usage");
-    expect(logger.lines[0]![1]).toMatch(/^help took/);
+    expect(await executor.execute("go a b")).toBe("usage");
+    expect(logger.lines[0]![1]).toMatch(/^go took/);
   });
 });
 

@@ -4,6 +4,7 @@ import {
   Executor,
   UsageError,
   checkArguments,
+  formatCommand,
   type Command,
   type Middleware,
 } from "../src/index.js";
@@ -24,24 +25,18 @@ const command = (
 ): Command => ({ selectors, params, description: "d", action });
 
 describe("Executor", () => {
-  it("throws on a held selector", () => {
+  it("throws when a selector is already registered", () => {
     const { executor } = createExecutor();
-    expect(() => executor.registerCommand(command(["h", "x"]))).toThrow(
-      "Command with selectors (help, h) already exists! Use override flag to replace it.",
+    executor.registerCommand(command(["add", "a"]));
+    expect(() => executor.registerCommand(command(["x", "a"]))).toThrow(
+      "A command with the selectors add, a is already registered",
     );
   });
 
-  it("override replaces in place", async () => {
+  it("has no commands of its own", async () => {
     const { executor, printed } = createExecutor();
-    executor.registerCommand(command(["a"]));
-    executor.registerCommand(command(["b"]));
-    executor.registerCommand(command(["a'", "a"]), true);
-    await executor.execute("help");
-    expect(printed.map(([, m]) => m.split(" ")[2])).toEqual([
-      "help,",
-      "a',",
-      "b",
-    ]);
+    expect(await executor.execute("help")).toBe("unknown");
+    expect(printed).toEqual([["error", "Unknown command: help"]]);
   });
 
   it("runs middleware in use order around the action", async () => {
@@ -133,22 +128,6 @@ describe("Executor", () => {
     expect(printed).toEqual([]);
   });
 
-  it("help lists every command with its params", async () => {
-    const { executor, printed } = createExecutor();
-    executor.registerCommand(command(["add", "a"], () => {}, ["x", "y?"]));
-    await executor.execute("help");
-    expect(printed).toEqual([
-      ["echo", "  help, h [command] - Show the command list or one command."],
-      ["echo", "  add, a <x> [y] - d"],
-    ]);
-  });
-
-  it("help for an unknown command is a usage error", async () => {
-    const { executor, printed } = createExecutor();
-    expect(await executor.execute("help nope")).toBe("usage");
-    expect(printed).toEqual([["error", "Unknown command: nope"]]);
-  });
-
   it("a fallback runs for an unknown selector inside the middleware", async () => {
     const { executor, printed } = createExecutor();
     const trace: string[] = [];
@@ -184,5 +163,17 @@ describe("Executor", () => {
     });
     expect(await executor.execute("1 +")).toBe("failed");
     expect(printed).toEqual([["error", "bad line"]]);
+  });
+});
+
+describe("formatCommand", () => {
+  it("writes selectors, required and optional params and the description", () => {
+    expect(formatCommand(command(["add", "a"], () => {}, ["x", "y?"]))).toBe(
+      "  add, a <x> [y] - d",
+    );
+  });
+
+  it("leaves out the params when there are none", () => {
+    expect(formatCommand(command([":ls"]))).toBe("  :ls - d");
   });
 });

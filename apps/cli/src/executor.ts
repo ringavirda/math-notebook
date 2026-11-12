@@ -25,7 +25,6 @@ export function createExecutor(
   commands: MathCommands,
 ): Executor {
   const executor = new Executor(cli);
-  executor.unregisterCommand("help");
   let input = "";
   executor.use(
     mapErrors(cli, logger, [MathError, DomainError, StorageError], (error) =>

@@ -82,16 +82,3 @@ export function formatRecord(record: EvaluationRecord): string {
       : formatNumber(record.result);
   return `${time} ${record.source} => ${outcome}`;
 }
-
-/** @returns `  <selectors> <params> - <description>` for the command list. */
-export function formatCommand(command: {
-  selectors: readonly string[];
-  params: readonly string[];
-  description: string;
-}): string {
-  const params = command.params.map((p) =>
-    p.endsWith("?") ? `[${p.slice(0, -1)}]` : `<${p}>`,
-  );
-  const head = [command.selectors.join(", "), ...params].join(" ");
-  return `  ${head} - ${command.description}`;
-}

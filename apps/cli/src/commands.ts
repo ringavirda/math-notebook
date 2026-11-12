@@ -1,13 +1,8 @@
 import { inject, injectable } from "inversify";
-import { CLI, UsageError, type Command } from "@mathbook/cli";
-import { NotebookService } from "@mathbook/notebook";
+import { CLI, UsageError, formatCommand, type Command } from "@mathbook/cli";
+import { NotebookService, StorageError } from "@mathbook/notebook";
 import { CONFIG, type Config } from "./config.js";
-import {
-  formatCommand,
-  formatDefinition,
-  formatRecord,
-  formatResult,
-} from "./format.js";
+import { formatDefinition, formatRecord, formatResult } from "./format.js";
 
 const HISTORY_USAGE = "Usage: :history [n] [failed]";
 
@@ -30,9 +25,19 @@ export class MathCommands {
     return this.notebook;
   }
 
-  /** Creates the notebook the session starts in when it does not exist. */
-  async start(): Promise<void> {
-    await this.service.ensure(this.notebook);
+  /**
+   * Creates the notebook the session starts in when it does not exist.
+   * @returns false when the storage failed; its message is printed as an error.
+   */
+  async start(): Promise<boolean> {
+    try {
+      await this.service.ensure(this.notebook);
+      return true;
+    } catch (error) {
+      if (!(error instanceof StorageError)) throw error;
+      this.cli.echoError(error.message);
+      return false;
+    }
   }
 
   /** Runs a definition or an expression in the current notebook and prints the result. */

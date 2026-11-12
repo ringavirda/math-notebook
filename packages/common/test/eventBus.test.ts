@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { EventBus } from "../src/index.js";
 
-type Ping = { type: "ping"; n: number };
+interface Ping {
+  type: "ping";
+  n: number;
+}
 
 describe("EventBus", () => {
   it("delivers to every listener in subscription order", () => {

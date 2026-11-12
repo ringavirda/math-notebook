@@ -1,5 +1,6 @@
 import { StorageError } from "@mathbook/notebook";
 import { describe, expect, it, vi } from "vitest";
+import { MemoryNotebookRepository } from "@mathbook/notebook/testing";
 import { createHarness } from "./harness.js";
 
 async function session(
@@ -55,6 +56,18 @@ describe("lines", () => {
       new StorageError("notebook main", "bad row"),
     );
     expect(await harness.executor.execute("1 + 2")).toBe("failed");
+    expect(harness.stderr()).toEqual([
+      "Err: Cannot read notebook main: bad row",
+    ]);
+  });
+
+  it("prints a storage error while opening the start notebook and reports it", async () => {
+    const repository = new MemoryNotebookRepository();
+    vi.spyOn(repository, "load").mockRejectedValue(
+      new StorageError("notebook main", "bad row"),
+    );
+    const harness = createHarness("main", [], repository);
+    expect(await harness.ready).toBe(false);
     expect(harness.stderr()).toEqual([
       "Err: Cannot read notebook main: bad row",
     ]);

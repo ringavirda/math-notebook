@@ -1,4 +1,4 @@
-import type { Command } from "./models/command.js";
+import { formatParams, isOptional, type Command } from "./command.js";
 
 /** What one command line looked like to the pipeline. */
 export interface CommandContext {
@@ -24,13 +24,6 @@ export type CommandStatus = "ok" | "empty" | "unknown" | "usage" | "failed";
 export class UsageError extends Error {
   override name = "UsageError";
 }
-
-export const isOptional = (param: string): boolean => param.endsWith("?");
-
-export const formatParams = (params: readonly string[]): string =>
-  params
-    .map((p) => (isOptional(p) ? `[${p.slice(0, -1)}]` : `<${p}>`))
-    .join(" ");
 
 /**
  * Checks the word count against the command's params.

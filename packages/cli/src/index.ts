@@ -10,5 +10,5 @@ export { exitCode, mapErrors, timing } from "./errors.js";
 export type { ExitCode } from "./errors.js";
 export { runInteractive, runOnce } from "./modes.js";
 export type { InteractiveOptions } from "./modes.js";
-export type { Command, Output } from "./models/command.js";
-export type { EchoColors, EchoOptions } from "./models/echo.js";
+export { formatCommand } from "./command.js";
+export type { Command, Output } from "./command.js";
