@@ -21,6 +21,11 @@ class Worker {
   }
 
   @logged
+  async count(value: object): Promise<number> {
+    return Object.keys(value).length;
+  }
+
+  @logged
   async fail(): Promise<void> {
     throw new Error("broken");
   }
@@ -39,6 +44,16 @@ describe("logged", () => {
     await worker.describe({ id: 1 }, [2, 3]);
     expect(worker.lines[0]).toMatch(
       /^\[debug\] describe\({"id":1}, \[2,3\]\) took/,
+    );
+  });
+
+  it("still runs the method for an argument JSON cannot serialize", async () => {
+    const worker = new Worker();
+    const cycle: Record<string, unknown> = {};
+    cycle.self = cycle;
+    expect(await worker.count(cycle)).toBe(1);
+    expect(worker.lines[0]).toMatch(
+      /^\[debug\] count\(\[object Object\]\) took/,
     );
   });
 

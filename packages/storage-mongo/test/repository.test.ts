@@ -318,6 +318,7 @@ describe("MongoNotebookRepository", () => {
           definitions: [{ name: "x", source: "x = +", dependsOn: [] }],
         }),
     );
+    expect(await repository.exists("broken")).toBe(true);
     await expect(repository.load("broken")).rejects.toBeInstanceOf(
       StorageError,
     );

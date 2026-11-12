@@ -324,6 +324,7 @@ describe("SqliteNotebookRepository", () => {
       .prepare("UPDATE definitions SET source = ? WHERE name = ?")
       .run("rate = = 1", "rate");
     raw.close();
+    expect(await repository.exists("prices")).toBe(true);
     await expect(repository.load("prices")).rejects.toThrow(StorageError);
   });
 

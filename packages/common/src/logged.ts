@@ -5,13 +5,20 @@ export interface HasLogger {
   readonly logger: Logger;
 }
 
-const show = (arg: unknown): string =>
-  typeof arg === "string" ? arg : (JSON.stringify(arg) ?? String(arg));
+const show = (arg: unknown): string => {
+  if (typeof arg === "string") return arg;
+  try {
+    return JSON.stringify(arg) ?? String(arg);
+  } catch {
+    return String(arg);
+  }
+};
 
 /**
  * Method decorator for async methods of a class with a `logger`. Writes
  * `<key>(<arguments>) took <n> ms` at debug level, or `<key>(<arguments>) failed after <n> ms`
- * and rethrows; `<n>` is whole milliseconds. Works only on a method that returns a Promise.
+ * and rethrows; `<n>` is whole milliseconds.
+ * An argument that cannot be serialized as JSON (circular, BigInt) is printed with `String`. Works only on a method that returns a Promise.
  * @param target the class prototype.
  * @param key the method name.
  * @param descriptor the method's descriptor; its value is replaced by the wrapper.
