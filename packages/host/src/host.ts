@@ -57,10 +57,11 @@ export interface Host {
   readonly argv: readonly string[];
   /**
    * Starts the hosted services in registration order, runs `main`, then stops the started ones
-   * in reverse order, also when `main` throws. While running, SIGINT stops the started
-   * services in reverse and sets `process.exitCode` to 130.
+   * in reverse order, also when `main` throws. A SIGINT while running sets `process.exitCode`
+   * to 130, stops further services from starting and skips `main` when it arrives before it;
+   * the stop still happens after `main` returns.
    * @param main the application; its result is the exit code.
-   * @returns the exit code of `main`, or 1 when a hosted service fails to start (its message
+   * @returns 130 after a SIGINT, else the exit code of `main`, or 1 when a hosted service fails to start (its message
    * is written to the logger's write function or stderr after the started ones are stopped).
    * @throws whatever `main` throws, after the services are stopped.
    */
@@ -137,9 +138,10 @@ class AppHost implements Host {
       })();
       return stopping;
     };
+    let interrupted = false;
     const onSigint = (): void => {
+      interrupted = true;
       process.exitCode = 130;
-      void stopAll();
     };
     process.on("SIGINT", onSigint);
     try {
@@ -155,8 +157,10 @@ class AppHost implements Host {
           return 1;
         }
         started.push(service);
+        if (interrupted) return 130;
       }
-      return await main(this);
+      const code = await main(this);
+      return interrupted ? 130 : code;
     } finally {
       await stopAll();
       process.off("SIGINT", onSigint);

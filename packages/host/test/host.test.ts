@@ -91,19 +91,46 @@ describe("createHostBuilder", () => {
     expect(events).toEqual(["start a", "stop a", "b cannot start"]);
   });
 
-  it("stops the started services on SIGINT and sets exit code 130", async () => {
+  it("keeps services open until main returns after SIGINT and returns 130", async () => {
     const events: string[] = [];
     const host = hostOf({ [A]: recording("a", events) });
     const saved = process.exitCode;
     try {
-      await host.run(async () => {
+      const code = await host.run(async () => {
         process.emit("SIGINT");
         await new Promise((resolve) => setImmediate(resolve));
         events.push("main");
         return 0;
       });
+      expect(code).toBe(130);
       expect(process.exitCode).toBe(130);
-      expect(events).toEqual(["start a", "stop a", "main"]);
+      expect(events).toEqual(["start a", "main", "stop a"]);
+    } finally {
+      process.exitCode = saved;
+    }
+  });
+
+  it("skips main and stops the started service when SIGINT arrives during start", async () => {
+    const events: string[] = [];
+    const slow: HostedService = {
+      async start() {
+        process.emit("SIGINT");
+        await new Promise((resolve) => setImmediate(resolve));
+        events.push("start slow");
+      },
+      async stop() {
+        events.push("stop slow");
+      },
+    };
+    const host = hostOf({ [A]: slow, [B]: recording("b", events) });
+    const saved = process.exitCode;
+    try {
+      const code = await host.run(async () => {
+        events.push("main");
+        return 0;
+      });
+      expect(code).toBe(130);
+      expect(events).toEqual(["start slow", "stop slow"]);
     } finally {
       process.exitCode = saved;
     }
