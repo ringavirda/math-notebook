@@ -81,7 +81,7 @@ the SQLite file with the CLI, so a value defined over HTTP is read by `pnpm --fi
     GET    /notebooks/:name/history?limit=10&failed    evaluations, newest first
 
 Errors are JSON `{"error": {"stage", "message"}}`: 400 for a line that fails an interpreter stage
-(with its `span`) or a bad request, 404 for an unknown name or route, 409 for a refused removal,
+(with its `span`) or a bad request, 404 for an unknown definition or route, 409 for a refused removal, 413 for a body over 64 KiB,
 500 `Unexpected error` for anything else.
 
 ## MongoDB

@@ -170,6 +170,20 @@ describe("api", () => {
     const limit = await call("GET", "/notebooks/main/history?limit=0");
     expect(limit.status).toBe(400);
     expect(limit.body.error.stage).toBe("request");
+    const failed = await call("GET", "/notebooks/main/history?failed=no");
+    expect(failed.status).toBe(400);
+    expect(failed.body.error.stage).toBe("request");
+  });
+
+  it("answers a body over 64 KiB with 413 and stage request", async () => {
+    const answer = await call(
+      "POST",
+      "/notebooks/main/run",
+      JSON.stringify({ line: "x".repeat(70 * 1024) }),
+    );
+    expect(answer.status).toBe(413);
+    expect(answer.type).toBe("application/json");
+    expect(answer.body.error.stage).toBe("request");
   });
 
   it("answers the dependencies of a definition", async () => {
@@ -193,6 +207,7 @@ describe("api", () => {
       "/notebooks/main/definitions/subtotal",
     );
     expect(removed.status).toBe(204);
+    expect(removed.type).toBeNull();
     expect(removed.body).toBeUndefined();
     const missing = await call(
       "DELETE",
@@ -219,6 +234,8 @@ describe("api", () => {
       ["GET", "/notebooks/main/nope"],
       ["PUT", "/notebooks"],
       ["GET", "/notebooks/main/run"],
+      ["POST", "/notebooks//run"],
+      ["GET", "/notebooks//history"],
     ]) {
       const answer = await call(method, path);
       expect(answer.status).toBe(404);

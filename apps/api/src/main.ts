@@ -1,18 +1,9 @@
 import "reflect-metadata";
-import { ConfigError, createHostBuilder } from "@mathbook/hosting";
-import { addNotebook } from "@mathbook/notebook-setup";
-import { CONFIG, configSchema } from "./config.js";
-import { HTTP_SERVICE, addServices } from "./services.js";
+import { ConfigError } from "@mathbook/hosting";
+import { createApi } from "./app.js";
 
 try {
-  const builder = addNotebook(
-    createHostBuilder()
-      .configuration(CONFIG, configSchema)
-      .logging({ level: "info" }),
-    CONFIG,
-  ).hosted(HTTP_SERVICE);
-  addServices(builder.services);
-  process.exitCode = await builder.build().run();
+  process.exitCode = await createApi().run();
 } catch (error) {
   if (!(error instanceof ConfigError)) throw error;
   process.stderr.write(error.message + "\n");

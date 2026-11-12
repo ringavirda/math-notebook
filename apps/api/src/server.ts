@@ -1,11 +1,26 @@
-import { createServer, type Server } from "node:http";
+import { createServer, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { Logger } from "@mathbook/common";
 import type { HostedService } from "@mathbook/hosting";
 import type { NotebookService } from "@mathbook/notebook";
-import { handle } from "./routes.js";
+import { handle, type Reply } from "./routes.js";
 
-/** The HTTP front end: listens when the host starts and closes when it stops. */
+const MAX_BODY_BYTES = 64 * 1024;
+
+function send(response: ServerResponse, { status, body }: Reply): void {
+  if (body === undefined) {
+    response.writeHead(status);
+    return void response.end();
+  }
+  const text = JSON.stringify(body);
+  response.writeHead(status, { "Content-Type": "application/json" });
+  response.end(text);
+}
+
+/**
+ * The HTTP front end: listens when the host starts and closes when it stops, letting requests in
+ * flight finish. A body over 64 KiB answers 413.
+ */
 export class HttpService implements HostedService {
   private readonly server: Server;
 
@@ -21,27 +36,53 @@ export class HttpService implements HostedService {
   ) {
     this.server = createServer((request, response) => {
       const chunks: Buffer[] = [];
-      request.on("data", (chunk: Buffer) => chunks.push(chunk));
+      let size = 0;
+      let tooLarge = false;
+      request.on("data", (chunk: Buffer) => {
+        if (tooLarge) return;
+        size += chunk.length;
+        if (size <= MAX_BODY_BYTES) return void chunks.push(chunk);
+        tooLarge = true;
+        chunks.length = 0;
+        send(response, {
+          status: 413,
+          body: {
+            error: {
+              stage: "request",
+              message: `Body is over ${MAX_BODY_BYTES} bytes`,
+            },
+          },
+        });
+        response.once("finish", () => request.destroy());
+      });
       request.on("end", () => {
-        void handle(
+        if (tooLarge) return;
+        handle(
           service,
           {
             method: request.method ?? "GET",
             url: request.url ?? "/",
             body: Buffer.concat(chunks).toString("utf8"),
           },
-          (error) =>
-            this.logger.error(
-              error instanceof Error
-                ? (error.stack ?? error.message)
-                : String(error),
-            ),
-        ).then(({ status, body }) => {
-          response.writeHead(status, { "Content-Type": "application/json" });
-          response.end(body === undefined ? undefined : JSON.stringify(body));
-        });
+          (error) => this.logError(error),
+        )
+          .then((reply) => send(response, reply))
+          .catch((error: unknown) => {
+            this.logError(error);
+            if (response.headersSent) return response.destroy();
+            send(response, {
+              status: 500,
+              body: { error: { stage: "server", message: "Unexpected error" } },
+            });
+          });
       });
     });
+  }
+
+  private logError(error: unknown): void {
+    this.logger.error(
+      error instanceof Error ? (error.stack ?? error.message) : String(error),
+    );
   }
 
   start(): Promise<void> {
@@ -64,7 +105,6 @@ export class HttpService implements HostedService {
         this.logger.info("stopped");
         resolve();
       });
-      this.server.closeAllConnections();
     });
   }
 }
