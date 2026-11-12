@@ -23,7 +23,9 @@ export class Router {
    *
    * @param method the HTTP method, upper case.
    * @param pattern a path of `/`-separated segments, each a literal or `:name`.
-   * @param handler answers a request the route matches.
+   * @param handler answers a request the route matches. When several routes match a request
+   * the first added route answers, so add literal routes before parameter routes of the same
+   * shape.
    * @throws {Error} when the pattern does not start with `/`, or when a route with the same
    * method and the same shape of pattern (parameter names aside) is already added.
    */
@@ -62,6 +64,7 @@ export class Router {
 
   /**
    * Answers one request. A trailing slash is ignored and an empty segment matches nothing.
+   * The first added route that matches the method and path answers.
    *
    * @param call the request as read from the wire; `url` is the path and query as sent.
    * @returns the reply of the pipeline around the matching route, 404 with stage `request`
@@ -73,7 +76,9 @@ export class Router {
     url: string;
     body: string;
   }): Promise<Reply> {
-    const url = new URL(call.url, "http://localhost");
+    const url = call.url.startsWith("/")
+      ? new URL(`http://localhost${call.url}`)
+      : new URL(call.url, "http://localhost");
     let parts: string[];
     try {
       parts = segmentsOf(url.pathname).map((part) => decodeURIComponent(part));

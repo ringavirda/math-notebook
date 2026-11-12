@@ -55,6 +55,19 @@ describe("Router.handle", () => {
     }
   });
 
+  it("reads a leading double slash as an empty segment, not a host", async () => {
+    const router = new Router();
+    router.route("GET", "/notebooks", ok);
+    expect((await router.handle(call("GET", "//x/notebooks"))).status).toBe(404);
+  });
+
+  it("answers 404 for an empty leading segment a parameter would take", async () => {
+    const router = new Router();
+    router.route("GET", "/:a/b", ok);
+    expect((await router.handle(call("GET", "//b"))).status).toBe(404);
+    expect((await router.handle(call("GET", "/x/b"))).status).toBe(200);
+  });
+
   it("answers 404 stage request for a wrong method", async () => {
     const { router } = echoing();
     expect(
@@ -163,11 +176,22 @@ describe("Router.route", () => {
     expect(() => router.route("GET", "/a/:name", ok)).toThrow("already added");
   });
 
-  it("accepts the same pattern with another method and another literal", () => {
+  it("accepts the same pattern with another method and another literal", async () => {
     const router = new Router();
-    router.route("GET", "/a/:id", ok);
+    const byId = async (): Promise<Reply> => ({ status: 200, body: "id" });
+    const list = async (): Promise<Reply> => ({ status: 200, body: "list" });
+    router.route("GET", "/a/:id", byId);
     router.route("DELETE", "/a/:id", ok);
-    router.route("GET", "/a/list", ok);
+    router.route("GET", "/a/list", list);
+    expect((await router.handle(call("GET", "/a/list"))).body).toBe("id");
+  });
+
+  it("answers with the literal route when it is added before the parameter route", async () => {
+    const router = new Router();
+    router.route("GET", "/a/list", async () => ({ status: 200, body: "list" }));
+    router.route("GET", "/a/:id", async () => ({ status: 200, body: "id" }));
+    expect((await router.handle(call("GET", "/a/list"))).body).toBe("list");
+    expect((await router.handle(call("GET", "/a/7"))).body).toBe("id");
   });
 
   it("throws on a pattern without a leading slash", () => {

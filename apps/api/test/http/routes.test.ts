@@ -45,6 +45,30 @@ describe("handle", () => {
     expect(onUnexpected).toHaveBeenCalledWith(cause.stack);
   });
 
+  it("logs one debug timing line with the route pattern, before the error line when the service throws", async () => {
+    const lines: string[] = [];
+    const logger: Logger = {
+      debug: (message) => lines.push(`debug ${message}`),
+      info: () => {},
+      warn: () => {},
+      error: () => lines.push("error"),
+    };
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new StorageError("notebook main", "broken"));
+    const router = createRouter({ list } as unknown as NotebookService, logger);
+    const call = { method: "GET", url: "/notebooks", body: "" };
+    await router.handle(call);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^debug GET \/notebooks took \d+ ms$/);
+    lines.length = 0;
+    await router.handle(call);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/^debug GET \/notebooks took \d+ ms$/);
+    expect(lines[1]).toBe("error");
+  });
+
   it("answers 404 for an empty path segment without calling the service", async () => {
     const run = vi.fn();
     const history = vi.fn();
