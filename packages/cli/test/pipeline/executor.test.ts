@@ -7,7 +7,7 @@ import {
   formatCommand,
   type Command,
   type Middleware,
-} from "../src/index.js";
+} from "../../src/index.js";
 
 function createExecutor() {
   const printed: [string, string][] = [];

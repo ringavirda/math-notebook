@@ -1,7 +1,7 @@
 import { inject, injectable } from "inversify";
 import { CLI, UsageError, formatCommand, type Command } from "@mathbook/cli";
 import { NotebookService, StorageError } from "@mathbook/notebook";
-import { CONFIG, type Config } from "./config.js";
+import { CONFIG, type Config } from "../config.js";
 import { formatDefinition, formatRecord, formatResult } from "./format.js";
 
 const HISTORY_USAGE = "Usage: :history [n] [failed]";

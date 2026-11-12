@@ -1,4 +1,4 @@
-import type { Command, Output } from "./command.js";
+import type { Command, Output } from "../models/command.js";
 import {
   type CommandContext,
   type CommandStatus,

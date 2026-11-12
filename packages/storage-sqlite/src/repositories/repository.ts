@@ -19,10 +19,10 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { definitions, dependencies, evaluations, notebooks } from "./tables.js";
+import { definitions, dependencies, evaluations, notebooks } from "../schema/tables.js";
 
 const memory = ":memory:";
-const migrationsFolder = fileURLToPath(new URL("../drizzle", import.meta.url));
+const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
 /** Keeps notebooks and history in SQLite tables, written through Drizzle. */
 export class SqliteNotebookRepository implements NotebookRepository {

@@ -8,23 +8,26 @@ around them, each in its own package.
 
 ## Layout
 
-- `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the command line, `app.ts` runs it,
-  `executor.ts` runs one line, `commands.ts` holds the commands, `format.ts` the output.
-- `apps/api` the same libraries behind HTTP on `node:http`: `routes.ts` maps requests to the
-  notebook service, `server.ts` is the hosted service, `services.ts` binds it,
-  `requests.http` holds the requests to send.
+- `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the command line, `app.ts` runs it;
+  `commands/` holds `executor.ts` that runs one line, `commands.ts` the commands, `format.ts` the output.
+- `apps/api` the same libraries behind HTTP on `node:http`: `main.ts`, `app.ts` and `services.ts`
+  build and bind it; `http/` holds `routes.ts` that maps requests to the notebook service and
+  `server.ts`, the hosted service; `requests.http` holds the requests to send.
 - `packages/interpreter` lexer, parser, analyzer and evaluator of the language, with errors that
   carry the span of the input they come from.
 - `packages/notebook` the domain: notebooks, dependencies, the service, events and the repository
   port.
-- `packages/storage-sqlite` the repository on SQLite through Drizzle, with migrations.
-- `packages/storage-mongo` the repository on MongoDB through the driver.
+- `packages/storage-sqlite` the repository on SQLite through Drizzle: `schema/` the tables,
+  `repositories/` the repository, `drizzle/` the migrations.
+- `packages/storage-mongo` the repository on MongoDB through the driver: `schema/` the documents,
+  `repositories/` the repository.
 - `packages/notebook-setup` `addNotebook`, the wiring both apps share: clock, event bus, the chosen
   repository, the service and the event logging, with the settings they read.
 - `packages/hosting` the application host: configuration, the stderr logger, hosted services, start and stop.
-- `packages/cli` terminal input and output, the command executor with its middleware, one-shot
-  and interactive modes.
-- `packages/common` the typed event bus, the logger interface and the `logged` method decorator.
+- `packages/cli` `models/` the command type, `terminal/` the terminal and its one-shot and
+  interactive modes, `pipeline/` the command executor with its middleware and error mapping.
+- `packages/common` `events/` the typed event bus, `logging/` the logger interface and the
+  `logged` method decorator.
 
 ## Commands
 

@@ -1,1 +1,1 @@
-export { SqliteNotebookRepository } from "./repository.js";
+export { SqliteNotebookRepository } from "./repositories/repository.js";

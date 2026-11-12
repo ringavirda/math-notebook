@@ -6,7 +6,7 @@ import {
   StorageError,
   type NotebookService,
 } from "@mathbook/notebook";
-import { handle } from "../src/routes.js";
+import { handle } from "../../src/http/routes.js";
 
 describe("handle", () => {
   it("answers 500 Unexpected error and reports the cause for a storage failure", async () => {

@@ -5,7 +5,7 @@ import {
   type CommandStatus,
   type Middleware,
 } from "./middleware.js";
-import type { Output } from "./command.js";
+import type { Output } from "../models/command.js";
 
 /**
  * Turns an error from the rest of the pipeline into printed lines and a status: `UsageError` is

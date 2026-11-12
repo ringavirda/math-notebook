@@ -20,7 +20,7 @@ import {
   notebookSchema,
   type EvaluationDocument,
   type NotebookDocument,
-} from "./documents.js";
+} from "../schema/documents.js";
 
 const DEFAULT_DATABASE = "mathbook";
 

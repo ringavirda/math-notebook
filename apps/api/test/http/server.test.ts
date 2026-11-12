@@ -6,9 +6,9 @@ import type { Logger } from "@mathbook/common";
 import { REPOSITORY_SERVICE } from "@mathbook/notebook-setup";
 import type { HostedService } from "@mathbook/hosting";
 import type { NotebookService } from "@mathbook/notebook";
-import { createApi } from "../src/app.js";
-import { HTTP_SERVICE } from "../src/services.js";
-import { HttpService } from "../src/server.js";
+import { createApi } from "../../src/app.js";
+import { HTTP_SERVICE } from "../../src/services.js";
+import { HttpService } from "../../src/http/server.js";
 
 function recordingLogger() {
   const lines: string[] = [];

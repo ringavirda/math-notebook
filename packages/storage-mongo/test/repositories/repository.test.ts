@@ -17,7 +17,7 @@ import {
   expect,
   it,
 } from "vitest";
-import { MongoNotebookRepository } from "../src/index.js";
+import { MongoNotebookRepository } from "../../src/index.js";
 
 const SERVER_START_MS = 300_000;
 

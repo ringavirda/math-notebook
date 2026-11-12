@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EventBus } from "../src/index.js";
+import { EventBus } from "../../src/index.js";
 
 interface Ping {
   type: "ping";

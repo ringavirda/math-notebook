@@ -2,7 +2,7 @@ import { Readable, Writable } from "node:stream";
 import { stripVTControlCharacters } from "node:util";
 import { describe, expect, it } from "vitest";
 
-import { CLI } from "../src/index.js";
+import { CLI } from "../../src/index.js";
 
 function sink() {
   const chunks: string[] = [];

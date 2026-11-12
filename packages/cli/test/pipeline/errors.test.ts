@@ -7,8 +7,8 @@ import {
   mapErrors,
   timing,
   type CommandStatus,
-} from "../src/index.js";
-import { createHarness } from "./helpers.js";
+} from "../../src/index.js";
+import { createHarness } from "../helpers.js";
 
 class ExpectedError extends Error {}
 class OtherError extends Error {

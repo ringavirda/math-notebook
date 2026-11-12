@@ -1,7 +1,7 @@
 import { StorageError } from "@mathbook/notebook";
 import { describe, expect, it, vi } from "vitest";
 import { MemoryNotebookRepository } from "@mathbook/notebook/testing";
-import { createHarness } from "./harness.js";
+import { createHarness } from "../harness.js";
 
 async function session(
   lines: string[],

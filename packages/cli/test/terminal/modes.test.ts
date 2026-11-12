@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { runInteractive, runOnce } from "../src/index.js";
-import { createHarness } from "./helpers.js";
+import { runInteractive, runOnce } from "../../src/index.js";
+import { createHarness } from "../helpers.js";
 
 const options = {
   banner: ["Hello", "Type help"],

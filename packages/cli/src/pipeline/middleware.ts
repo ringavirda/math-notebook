@@ -1,4 +1,4 @@
-import { formatParams, isOptional, type Command } from "./command.js";
+import { formatParams, isOptional, type Command } from "../models/command.js";
 
 /** What one command line looked like to the pipeline. */
 export interface CommandContext {

@@ -5,7 +5,7 @@ import {
   runOnce,
   type ExitCode,
 } from "@mathbook/cli";
-import { MathCommands } from "./commands.js";
+import { MathCommands } from "./commands/commands.js";
 import type { Host } from "@mathbook/hosting";
 
 /**

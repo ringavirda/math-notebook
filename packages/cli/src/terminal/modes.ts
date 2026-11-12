@@ -1,6 +1,6 @@
 import type { CLI } from "./cli.js";
-import { exitCode, type ExitCode } from "./errors.js";
-import type { Executor } from "./executor.js";
+import { exitCode, type ExitCode } from "../pipeline/errors.js";
+import type { Executor } from "../pipeline/executor.js";
 
 /**
  * Runs the words as one command line.

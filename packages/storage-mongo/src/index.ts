@@ -1,1 +1,1 @@
-export { MongoNotebookRepository } from "./repository.js";
+export { MongoNotebookRepository } from "./repositories/repository.js";

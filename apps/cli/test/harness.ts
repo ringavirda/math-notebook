@@ -6,9 +6,9 @@ import { EventBus } from "@mathbook/common";
 import { StderrLogger } from "@mathbook/hosting";
 import { NotebookService, type NotebookEvent } from "@mathbook/notebook";
 import { MemoryNotebookRepository } from "@mathbook/notebook/testing";
-import { MathCommands } from "../src/commands.js";
+import { MathCommands } from "../src/commands/commands.js";
 import type { Config } from "../src/config.js";
-import { createExecutor } from "../src/executor.js";
+import { createExecutor } from "../src/commands/executor.js";
 
 export function createHarness(
   notebook = "main",

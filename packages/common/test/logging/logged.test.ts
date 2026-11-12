@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { logged, type Logger } from "../src/index.js";
+import { logged, type Logger } from "../../src/index.js";
 
 class Worker {
   readonly lines: string[] = [];

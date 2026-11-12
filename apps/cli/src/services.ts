@@ -1,8 +1,8 @@
 import { Container } from "inversify";
 import { CLI, Executor } from "@mathbook/cli";
 import { LOGGER } from "@mathbook/hosting";
-import { MathCommands } from "./commands.js";
-import { createExecutor } from "./executor.js";
+import { MathCommands } from "./commands/commands.js";
+import { createExecutor } from "./commands/executor.js";
 
 /**
  * Binds the command line front end; the host's `LOGGER` and the notebook's bindings must be

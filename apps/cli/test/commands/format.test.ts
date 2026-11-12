@@ -7,7 +7,7 @@ import {
   formatNumber,
   formatRecord,
   formatResult,
-} from "../src/format.js";
+} from "../../src/commands/format.js";
 
 describe("formatNumber", () => {
   it.each([
