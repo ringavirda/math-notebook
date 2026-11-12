@@ -1,0 +1,32 @@
+{
+  "name": "@mathbook/api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "tsc --incremental && concurrently --kill-others --raw \"tsc --watch --incremental --preserveWatchOutput\" \"node --watch dist/main.js\"",
+    "typecheck": "tsc --noEmit && tsc -p test",
+    "test": "vitest run",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@mathbook/common": "workspace:*",
+    "@mathbook/hosting": "workspace:*",
+    "@mathbook/interpreter": "workspace:*",
+    "@mathbook/notebook": "workspace:*",
+    "@mathbook/storage-mongo": "workspace:*",
+    "@mathbook/storage-sqlite": "workspace:*",
+    "inversify": "catalog:",
+    "reflect-metadata": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@mathbook/cli-app": "workspace:*",
+    "@types/node": "catalog:",
+    "concurrently": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,96 @@
+@host = http://localhost:3000
+
+### List the notebooks
+GET {{host}}/notebooks
+
+### Define rate
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "rate = 0.2"
+}
+
+### Define price
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "price = 40"
+}
+
+### Define a function that uses both
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "total(n) = n * price * (1 + rate)"
+}
+
+### Define a variable that uses price
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "subtotal = price * 2"
+}
+
+### Call the function
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "total(3)"
+}
+
+### Change price, subtotal is recomputed
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "price = 50"
+}
+
+### The notebook with its values
+GET {{host}}/notebooks/main
+
+### Lexical error
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "1 $ 2"
+}
+
+### Syntax error
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "1 +"
+}
+
+### Semantic error
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "missing + 1"
+}
+
+### Evaluation error
+POST {{host}}/notebooks/main/run
+Content-Type: application/json
+
+{
+    "line": "1 / 0"
+}
+
+### What price uses and what uses it
+GET {{host}}/notebooks/main/dependencies/price
+
+### Remove price, refused while others use it
+DELETE {{host}}/notebooks/main/definitions/price
+
+### The failed evaluations
+GET {{host}}/notebooks/main/history?limit=10&failed

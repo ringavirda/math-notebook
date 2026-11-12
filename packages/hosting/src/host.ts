@@ -61,12 +61,16 @@ export interface Host {
    * in reverse order, also when `main` throws. A SIGINT while running sets `process.exitCode`
    * to 130, stops further services from starting and skips `main` when it arrives before it;
    * the stop still happens after `main` returns.
+   *
+   * Without `main` the host serves: after the services have started it waits for a SIGINT or
+   * SIGTERM, stops them and resolves 0, leaving `process.exitCode` alone.
    * @param main the application; its result is the exit code.
    * @returns 130 after a SIGINT, else the exit code of `main`, or 1 when a hosted service fails to start (its message
-   * is written to the logger's write function or stderr after the started ones are stopped).
+   * is written to the logger's write function or stderr after the started ones are stopped). 0 after a signal
+   * when serving.
    * @throws whatever `main` throws, after the services are stopped.
    */
-  run(main: (host: Host) => Promise<number>): Promise<number>;
+  run(main?: (host: Host) => Promise<number>): Promise<number>;
 }
 
 const levelSchema = z.object({
@@ -130,7 +134,7 @@ class AppHost implements Host {
     private readonly write?: (line: string) => void,
   ) {}
 
-  async run(main: (host: Host) => Promise<number>): Promise<number> {
+  async run(main?: (host: Host) => Promise<number>): Promise<number> {
     const started: HostedService[] = [];
     let stopping: Promise<void> | undefined;
     const stopAll = (): Promise<void> => {
@@ -140,11 +144,15 @@ class AppHost implements Host {
       return stopping;
     };
     let interrupted = false;
+    let signalled: () => void = () => {};
+    const stopSignal = new Promise<void>((resolve) => (signalled = resolve));
     const onSigint = (): void => {
+      if (main === undefined) return signalled();
       interrupted = true;
       process.exitCode = 130;
     };
     process.on("SIGINT", onSigint);
+    if (main === undefined) process.on("SIGTERM", signalled);
     try {
       for (const token of this.hostedTokens) {
         let service: HostedService;
@@ -161,11 +169,16 @@ class AppHost implements Host {
         started.push(service);
         if (interrupted) return 130;
       }
+      if (main === undefined) {
+        await stopSignal;
+        return 0;
+      }
       const code = await main(this);
       return interrupted ? 130 : code;
     } finally {
       await stopAll();
       process.off("SIGINT", onSigint);
+      process.off("SIGTERM", signalled);
     }
   }
 }

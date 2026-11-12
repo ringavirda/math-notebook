@@ -138,6 +138,33 @@ describe("createHostBuilder", () => {
     }
   });
 
+  it.each(["SIGINT", "SIGTERM"] as const)(
+    "serves until %s, then stops in reverse and resolves 0",
+    async (signal) => {
+      const events: string[] = [];
+      const host = hostOf({
+        [A]: recording("a", events),
+        [B]: recording("b", events),
+      });
+      const saved = process.exitCode;
+      const sigint = process.listenerCount("SIGINT");
+      const sigterm = process.listenerCount("SIGTERM");
+      try {
+        const running = host.run();
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(events).toEqual(["start a", "start b"]);
+        process.emit(signal);
+        expect(await running).toBe(0);
+        expect(events).toEqual(["start a", "start b", "stop b", "stop a"]);
+        expect(process.exitCode).toBe(saved);
+        expect(process.listenerCount("SIGINT")).toBe(sigint);
+        expect(process.listenerCount("SIGTERM")).toBe(sigterm);
+      } finally {
+        process.exitCode = saved;
+      }
+    },
+  );
+
   it("skips main and stops the started service when SIGINT arrives during start", async () => {
     const events: string[] = [];
     const slow: HostedService = {

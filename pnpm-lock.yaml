@@ -233,6 +233,55 @@ importers:
         specifier: ^8.71.2
         version: 8.72.2(eslint@10.14.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
 
+  apps/api:
+    dependencies:
+      '@mathbook/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@mathbook/hosting':
+        specifier: workspace:*
+        version: link:../../packages/hosting
+      '@mathbook/interpreter':
+        specifier: workspace:*
+        version: link:../../packages/interpreter
+      '@mathbook/notebook':
+        specifier: workspace:*
+        version: link:../../packages/notebook
+      '@mathbook/storage-mongo':
+        specifier: workspace:*
+        version: link:../../packages/storage-mongo
+      '@mathbook/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/storage-sqlite
+      inversify:
+        specifier: 'catalog:'
+        version: 8.3.0(reflect-metadata@0.2.2)
+      reflect-metadata:
+        specifier: 'catalog:'
+        version: 0.2.2
+      zod:
+        specifier: 'catalog:'
+        version: 4.6.7
+    devDependencies:
+      '@mathbook/cli-app':
+        specifier: workspace:*
+        version: link:../cli
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.2
+      concurrently:
+        specifier: 'catalog:'
+        version: 10.0.7
+      rimraf:
+        specifier: 'catalog:'
+        version: 6.1.4
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.1.0(@types/node@24.19.2)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
+
   apps/cli:
     dependencies:
       '@mathbook/cli':
