@@ -42,6 +42,12 @@ function parseLine(body: string): string {
   return line;
 }
 
+function parseFailed(value: string | null): boolean {
+  if (value === null) return false;
+  if (value === "" || value === "true") return true;
+  throw new RequestError("failed must be absent, failed or failed=true");
+}
+
 function parseLimit(value: string | null): number {
   if (value === null) return 10;
   const limit = Number(value);
@@ -63,7 +69,7 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
     status: 404,
     body: { error: { stage: "request", message: "Not found" } },
   };
-  if (root !== "notebooks") return notFound;
+  if (root !== "notebooks" || parts.includes("")) return notFound;
 
   if (name === undefined) {
     if (call.method !== "GET") return notFound;
@@ -91,7 +97,7 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
   if (section === "history" && item === undefined && call.method === "GET") {
     const history = await service.history(name, {
       limit: parseLimit(url.searchParams.get("limit")),
-      failedOnly: url.searchParams.has("failed"),
+      failedOnly: parseFailed(url.searchParams.get("failed")),
     });
     return { status: 200, body: { history } };
   }
@@ -103,7 +109,7 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
  *
  * Routes: `GET /notebooks`, `GET /notebooks/:name`, `POST /notebooks/:name/run` with
  * `{ "line" }`, `DELETE /notebooks/:name/definitions/:def`,
- * `GET /notebooks/:name/dependencies/:def`, `GET /notebooks/:name/history?limit=10&failed`.
+ * `GET /notebooks/:name/dependencies/:def`, `GET /notebooks/:name/history?limit=10&failed` (`failed=true` also counts).
  * A `MathError` answers 400, a `NotFoundError` 404, any other `DomainError` 409, a bad request
  * 400 with stage `request`, an unknown route 404.
  * @param service the notebook use cases.
