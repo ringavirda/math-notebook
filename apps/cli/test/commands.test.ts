@@ -61,16 +61,11 @@ describe("lines", () => {
     ]);
   });
 
-  it("prints a storage error while opening the start notebook and reports it", async () => {
+  it("rejects start when the storage fails with something other than a storage error", async () => {
     const repository = new MemoryNotebookRepository();
-    vi.spyOn(repository, "exists").mockRejectedValue(
-      new StorageError("notebook main", "bad row"),
-    );
+    vi.spyOn(repository, "exists").mockRejectedValue(new Error("database is locked"));
     const harness = createHarness("main", [], repository);
-    expect(await harness.ready).toBe(false);
-    expect(harness.stderr()).toEqual([
-      "Err: Cannot read notebook main: bad row",
-    ]);
+    await expect(harness.ready).rejects.toThrow("database is locked");
   });
 
   it("prints a domain error as its message and is failed", async () => {
