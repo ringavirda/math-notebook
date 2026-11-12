@@ -30,7 +30,9 @@ function failing(error: unknown) {
 
 describe("mapErrors", () => {
   it("prints an expected error's message and fails", async () => {
-    const { executor, cli, logger, stderr } = failing(new ExpectedError("nope"));
+    const { executor, cli, logger, stderr } = failing(
+      new ExpectedError("nope"),
+    );
     executor.use(mapErrors(cli, logger, [ExpectedError]));
     expect(await executor.execute("boom")).toBe("failed");
     expect(stderr()).toEqual(["Err: nope"]);
@@ -38,7 +40,9 @@ describe("mapErrors", () => {
   });
 
   it("prints the lines from describe for an expected error", async () => {
-    const { executor, cli, logger, stderr } = failing(new ExpectedError("nope"));
+    const { executor, cli, logger, stderr } = failing(
+      new ExpectedError("nope"),
+    );
     executor.use(
       mapErrors(cli, logger, [ExpectedError], (e) => [e.message, "second"]),
     );
@@ -65,7 +69,9 @@ describe("mapErrors", () => {
   });
 
   it("a usage error is usage even when expected lists Error", async () => {
-    const { executor, cli, logger, stderr } = failing(new UsageError("bad use"));
+    const { executor, cli, logger, stderr } = failing(
+      new UsageError("bad use"),
+    );
     executor.use(mapErrors(cli, logger, [Error]));
     expect(await executor.execute("boom")).toBe("usage");
     expect(stderr()).toEqual(["Err: bad use"]);

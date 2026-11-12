@@ -30,7 +30,10 @@ export function mapErrors(
       if (error instanceof UsageError) {
         cli.echoError(error.message);
         context.status = "usage";
-      } else if (error instanceof Error && expected.some((c) => error instanceof c)) {
+      } else if (
+        error instanceof Error &&
+        expected.some((c) => error instanceof c)
+      ) {
         for (const line of describe(error)) cli.echoError(line);
         context.status = "failed";
       } else {

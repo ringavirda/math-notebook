@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { runInteractive, runOnce } from "../src/index.js";
 import { createHarness } from "./helpers.js";
 
-const options = { banner: ["Hello", "Type help"], goodbye: "Bye", prompt: "->" };
+const options = {
+  banner: ["Hello", "Type help"],
+  goodbye: "Bye",
+  prompt: "->",
+};
 
 function withEcho(input: string[]) {
   const harness = createHarness(input);

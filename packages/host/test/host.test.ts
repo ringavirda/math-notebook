@@ -4,7 +4,12 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { ConfigError } from "@mathbook/config";
 
-import { ARGV, LOGGER, createHostBuilder, type HostedService } from "../src/index.js";
+import {
+  ARGV,
+  LOGGER,
+  createHostBuilder,
+  type HostedService,
+} from "../src/index.js";
 import type { Logger } from "@mathbook/logging";
 
 const A = Symbol("a");
@@ -51,13 +56,7 @@ describe("createHostBuilder", () => {
       return 7;
     });
     expect(code).toBe(7);
-    expect(events).toEqual([
-      "start a",
-      "start b",
-      "main",
-      "stop b",
-      "stop a",
-    ]);
+    expect(events).toEqual(["start a", "start b", "main", "stop b", "stop a"]);
   });
 
   it("stops after main throws and rethrows", async () => {
@@ -91,10 +90,32 @@ describe("createHostBuilder", () => {
     expect(events).toEqual(["start a", "stop a", "b cannot start"]);
   });
 
+  it("returns 1 and stops the started ones when a hosted token has no binding", async () => {
+    const events: string[] = [];
+    const lines: string[] = [];
+    const builder = createHostBuilder({ argv: [], env: {} }).logging({
+      write: (line) => lines.push(line),
+    });
+    builder.services
+      .bind<HostedService>(A)
+      .toConstantValue(recording("a", events));
+    const code = await builder
+      .hosted(A)
+      .hosted(B)
+      .build()
+      .run(async () => 0);
+    expect(code).toBe(1);
+    expect(events).toEqual(["start a", "stop a"]);
+  });
+
   it("keeps services open until main returns after SIGINT and returns 130", async () => {
     const events: string[] = [];
-    const host = hostOf({ [A]: recording("a", events) });
+    const host = hostOf({
+      [A]: recording("a", events),
+      [B]: recording("b", events),
+    });
     const saved = process.exitCode;
+    const listeners = process.listenerCount("SIGINT");
     try {
       const code = await host.run(async () => {
         process.emit("SIGINT");
@@ -104,7 +125,14 @@ describe("createHostBuilder", () => {
       });
       expect(code).toBe(130);
       expect(process.exitCode).toBe(130);
-      expect(events).toEqual(["start a", "main", "stop a"]);
+      expect(events).toEqual([
+        "start a",
+        "start b",
+        "main",
+        "stop b",
+        "stop a",
+      ]);
+      expect(process.listenerCount("SIGINT")).toBe(listeners);
     } finally {
       process.exitCode = saved;
     }
@@ -137,21 +165,27 @@ describe("createHostBuilder", () => {
   });
 
   it("builds configuration from the env under its token", () => {
-    const builder = createHostBuilder({ argv: [], env: { PORT: "8080" } })
-      .configuration(SETTINGS, z.object({ PORT: z.coerce.number() }));
+    const builder = createHostBuilder({
+      argv: [],
+      env: { PORT: "8080" },
+    }).configuration(SETTINGS, z.object({ PORT: z.coerce.number() }));
     const host = builder.build();
     expect(host.services.get(SETTINGS)).toEqual({ PORT: 8080 });
   });
 
   it("throws ConfigError at build for a bad value", () => {
-    const builder = createHostBuilder({ argv: [], env: { PORT: "x" } })
-      .configuration(SETTINGS, z.object({ PORT: z.coerce.number() }));
+    const builder = createHostBuilder({
+      argv: [],
+      env: { PORT: "x" },
+    }).configuration(SETTINGS, z.object({ PORT: z.coerce.number() }));
     expect(() => builder.build()).toThrow(ConfigError);
   });
 
   it("throws ConfigError at build for a bad LOG_LEVEL", () => {
-    const builder = createHostBuilder({ argv: [], env: { LOG_LEVEL: "loud" } })
-      .logging();
+    const builder = createHostBuilder({
+      argv: [],
+      env: { LOG_LEVEL: "loud" },
+    }).logging();
     expect(() => builder.build()).toThrow(ConfigError);
   });
 

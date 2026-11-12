@@ -146,8 +146,9 @@ class AppHost implements Host {
     process.on("SIGINT", onSigint);
     try {
       for (const token of this.hostedTokens) {
-        const service = this.services.get<HostedService>(token);
+        let service: HostedService;
         try {
+          service = this.services.get<HostedService>(token);
           await service.start();
         } catch (error) {
           await stopAll();

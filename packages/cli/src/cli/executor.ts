@@ -18,8 +18,7 @@ export class Executor {
   private readonly _commands: Command[] = [];
   private readonly _middlewares: Middleware[] = [];
   private _fallback:
-    | ((line: string, context: CommandContext) => Promise<void>)
-    | undefined;
+    ((line: string, context: CommandContext) => Promise<void>) | undefined;
 
   /**
    * Registers the `help` and `h` command.
@@ -88,7 +87,9 @@ export class Executor {
   /**
    * Sets what runs for a line whose first word matches no command, in place of the `unknown`
    * status. The handler runs inside the middleware pipeline; the context's command is a stand-in
-   * named after the first word that accepts any number of words.
+   * named after the first word that accepts any number of words. The `help` and `h` commands
+   * are registered, so a line starting with either never reaches the handler unless
+   * `unregisterCommand` removed them.
    *
    * @param handler called with the trimmed line and the context.
    */
