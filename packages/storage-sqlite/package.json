@@ -9,13 +9,14 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "drizzle"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit && tsc -p test",
+    "test": "vitest run",
     "clean": "rimraf dist",
     "generate": "drizzle-kit generate"
   },
