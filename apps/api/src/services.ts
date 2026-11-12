@@ -11,6 +11,7 @@ import { addNotebookRoutes } from "./http/routes.js";
 export const HTTP_SERVICE: unique symbol = Symbol("mathbook.httpService");
 
 /**
+ * Builds the router of the notebook routes with the error mapping and timing middleware.
  * @param service the notebook use cases the routes call.
  * @param logger where timings and unexpected errors go.
  * @returns a router whose pipeline is `mapErrors`, then `timing`, around the notebook routes.
