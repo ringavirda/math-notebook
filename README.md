@@ -37,7 +37,7 @@ around them, each in its own package.
     pnpm --filter @mathbook/cli-app start              interactive session
     pnpm --filter @mathbook/cli-app start '1 + 2'      one line, exit code 0, 1 (failed) or 2 (used wrongly)
     pnpm --filter @mathbook/cli-app dev                rebuild and restart on change
-    pnpm --filter @mathbook/cli-app start < seed.txt   fill the notebooks with examples, once
+    pnpm --filter @mathbook/cli-app start < seed.txt   fill the notebooks with examples, into a fresh database
 
     pnpm --filter @mathbook/api start                  HTTP API on PORT, default 3000, until Ctrl+C
     pnpm --filter @mathbook/api dev                    rebuild and restart on change

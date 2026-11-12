@@ -200,6 +200,17 @@ describe("startup", () => {
   );
 
   it(
+    "a bad start notebook name exits 1 naming the variable",
+    async () => {
+      const result = await run([":ls"], { MATHBOOK_NOTEBOOK: "a b" });
+      expect(result.code).toBe(1);
+      expect(result.stderr).toContain("MATHBOOK_NOTEBOOK");
+      expect(result.stderr).not.toContain("    at ");
+    },
+    timeout,
+  );
+
+  it(
     "an unreachable Mongo exits 1 with a message",
     async () => {
       const result = await run([":ls"], {

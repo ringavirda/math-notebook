@@ -105,7 +105,12 @@ describe("api", () => {
   });
 
   it("runs definitions and expressions", async () => {
-    await execute(["1"], { MATHBOOK_DB: db });
+    const created = await call(
+      "POST",
+      "/notebooks",
+      JSON.stringify({ name: "main" }),
+    );
+    expect(created.status).toBe(201);
     expect((await run("rate = 0.2")).status).toBe(200);
     const price = await run("price = 40");
     expect(price.body.definition.value).toBe(40);
