@@ -250,12 +250,6 @@ importers:
       '@mathbook/notebook-setup':
         specifier: workspace:*
         version: link:../../packages/notebook-setup
-      '@mathbook/storage-mongo':
-        specifier: workspace:*
-        version: link:../../packages/storage-mongo
-      '@mathbook/storage-sqlite':
-        specifier: workspace:*
-        version: link:../../packages/storage-sqlite
       inversify:
         specifier: 'catalog:'
         version: 8.3.0(reflect-metadata@0.2.2)
@@ -305,12 +299,6 @@ importers:
       '@mathbook/notebook-setup':
         specifier: workspace:*
         version: link:../../packages/notebook-setup
-      '@mathbook/storage-mongo':
-        specifier: workspace:*
-        version: link:../../packages/storage-mongo
-      '@mathbook/storage-sqlite':
-        specifier: workspace:*
-        version: link:../../packages/storage-sqlite
       inversify:
         specifier: 'catalog:'
         version: 8.3.0(reflect-metadata@0.2.2)

@@ -17,8 +17,6 @@
     "@mathbook/interpreter": "workspace:*",
     "@mathbook/notebook": "workspace:*",
     "@mathbook/notebook-setup": "workspace:*",
-    "@mathbook/storage-mongo": "workspace:*",
-    "@mathbook/storage-sqlite": "workspace:*",
     "inversify": "catalog:",
     "reflect-metadata": "catalog:",
     "zod": "catalog:"

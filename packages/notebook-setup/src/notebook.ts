@@ -12,18 +12,24 @@ import { MongoNotebookRepository } from "@mathbook/storage-mongo";
 import { SqliteNotebookRepository } from "@mathbook/storage-sqlite";
 import type { NotebookSettings } from "./settings.js";
 
+/** Token of the `EventBus<NotebookEvent>` bound by `addNotebook`, one per host. */
 export const EVENT_BUS: unique symbol = Symbol("mathbook.eventBus");
+/** Token of the `Clock` bound by `addNotebook`. */
 export const CLOCK: unique symbol = Symbol("mathbook.clock");
+/** Token of the `NotebookRepository` bound by `addNotebook`, chosen by `MATHBOOK_STORAGE`. */
 export const REPOSITORY: unique symbol = Symbol("mathbook.repository");
+/** Token of the `HostedService` that opens and closes the repository. */
 export const REPOSITORY_SERVICE: unique symbol = Symbol(
   "mathbook.repositoryService",
 );
+/** Token of the `HostedService` that logs notebook events. */
 export const EVENT_LOG_SERVICE: unique symbol = Symbol(
   "mathbook.eventLogService",
 );
 
 /** Opens the repository when the host starts and closes it when the host stops. */
 export class RepositoryService implements HostedService {
+  /** @param repository Repository opened on start and closed on stop. */
   constructor(private readonly repository: NotebookRepository) {}
 
   start(): Promise<void> {
@@ -39,6 +45,10 @@ export class RepositoryService implements HostedService {
 export class EventLogService implements HostedService {
   private unsubscribe: (() => void) | undefined;
 
+  /**
+   * @param events Bus whose events are logged.
+   * @param logger Receives one info line per event.
+   */
   constructor(
     private readonly events: EventBus<NotebookEvent>,
     private readonly logger: Logger,
