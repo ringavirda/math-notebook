@@ -64,9 +64,17 @@ function describeFailure(error: {
     : `${STAGE_NAMES[error.stage]} error: ${error.message}`;
 }
 
-/** @returns `<UTC time> <source> => <result or error>` for one history entry. */
+const pad = (n: number): string => String(n).padStart(2, "0");
+
+/** @returns `YYYY-MM-DD HH:MM:SS` in the machine's time zone. */
+function formatLocalTime(at: Date): string {
+  const date = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+  return `${date} ${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())}`;
+}
+
+/** @returns `<local time> <source> => <result or error>` for one history entry. */
 export function formatRecord(record: EvaluationRecord): string {
-  const time = record.at.toISOString().replace("T", " ").slice(0, 19);
+  const time = formatLocalTime(record.at);
   const outcome = record.error
     ? describeFailure(record.error)
     : record.result === null

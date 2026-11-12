@@ -117,7 +117,7 @@ describe("describeError", () => {
 });
 
 describe("formatRecord", () => {
-  const at = new Date("2026-11-12T10:20:30.456Z");
+  const at = new Date(2026, 10, 12, 10, 20, 30, 456);
   const base = { notebook: "main", at, kind: "expression" as const };
 
   it("prints a value", () => {
