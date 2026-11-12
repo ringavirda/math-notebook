@@ -1,0 +1,62 @@
+:use main
+price = 40
+qty = 3
+rate = 0.2
+subtotal = price * qty
+tax = subtotal * rate
+total = subtotal + tax
+withTax(x) = x * (1 + rate)
+withTax(15)
+price = 50
+total
+discount(x, pct) = x * (1 - pct / 100)
+discount(total, 10)
+round(total / 7)
+shipping = 5
+1 $ 2
+total +
+missing * 2
+subtotal / 0
+withTax(1, 2)
+:rm tax
+:rm shipping
+:use geometry
+r = 2
+area = pi * r ^ 2
+circumference = 2 * pi * r
+hyp(a, b) = sqrt(a ^ 2 + b ^ 2)
+hyp(3, 4)
+diag(side) = hyp(side, side)
+diag(10)
+r = 5
+area / circumference
+sqrt(-1)
+area(2)
+pi = 3
+(1 + 2
+:use loan
+principal = 10000
+yearly = 0.12
+years = 5
+monthly = yearly / 12
+months = years * 12
+payment = principal * monthly / (1 - (1 + monthly) ^ -months)
+paid = payment * months
+interest = paid - principal
+round(payment)
+years = 3
+round(interest)
+grow(p, n) = p * (1 + yearly) ^ n
+round(grow(principal, 10))
+yearly = paid / principal
+log(0)
+:use units
+km = 1000
+mile = 1609.344
+toMiles(m) = m / mile
+toKm(m) = m / km
+marathon = 42.195 * km
+toMiles(marathon)
+toKm(marathon)
+max(toMiles(marathon), 26)
+toKm + 1
