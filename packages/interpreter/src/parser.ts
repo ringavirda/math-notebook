@@ -6,7 +6,7 @@ import {
   NumberNode,
   UnaryNode,
 } from "./ast.js";
-import { ParseError, type Span } from "./errors.js";
+import { LexError, ParseError, type Span } from "./errors.js";
 import { tokenize, type Token } from "./lexer.js";
 
 /** `name = expr` or `name(params) = expr`. */
@@ -170,8 +170,13 @@ class Parser {
   private primary(): ExprNode {
     const token = this.next();
     switch (token.kind) {
-      case "number":
-        return new NumberNode(Number(token.text), token.span);
+      case "number": {
+        const value = Number(token.text);
+        if (!Number.isFinite(value)) {
+          throw new LexError(`Number out of range '${token.text}'`, token.span);
+        }
+        return new NumberNode(value, token.span);
+      }
       case "name":
         return this.peek().kind === "lparen"
           ? this.call(token)
@@ -209,7 +214,7 @@ class Parser {
 /**
  * Parses one input line into a definition or an expression.
  * @param line the text; leading and trailing blanks are ignored in `source`.
- * @throws {LexError} from the lexer.
+ * @throws {LexError} from the lexer, or on a number literal too large to be finite.
  * @throws {ParseError} on a token that does not fit the grammar, a missing `)`, a left side of `=`
  * that is not a name or name(params), or a repeated parameter.
  */

@@ -93,6 +93,7 @@ describe("errors", () => {
   it.each([
     ["2 $ 3", LexError, "Unknown character '$'", 2, 3],
     ["1.2.3", LexError, "Malformed number '1.2.3'", 0, 5],
+    ["1e999", LexError, "Number out of range '1e999'", 0, 5],
     ["(1+2", ParseError, "Missing ')'", 4, 4],
     ["f(1", ParseError, "Missing ')'", 3, 3],
     ["(1 2)", ParseError, "Missing ')'", 3, 4],
