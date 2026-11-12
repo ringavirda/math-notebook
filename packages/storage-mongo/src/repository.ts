@@ -17,10 +17,6 @@ import {
 
 const DEFAULT_DATABASE = "mathbook";
 
-function databaseName(url: string): string {
-  return new URL(url).pathname.slice(1) || DEFAULT_DATABASE;
-}
-
 function readBack<T>(
   schema: z.ZodType<T>,
   where: string,
@@ -65,7 +61,8 @@ export class MongoNotebookRepository implements NotebookRepository {
 
   async open(): Promise<void> {
     await this.client.connect();
-    this.database = this.client.db(databaseName(this.url));
+    const named = /^mongodb(\+srv)?:\/\/[^/]+\/[^?]/.test(this.url);
+    this.database = this.client.db(named ? undefined : DEFAULT_DATABASE);
     await this.notebooks().createIndex({ name: 1 }, { unique: true });
     await this.evaluations().createIndex({ notebook: 1, at: -1 });
   }

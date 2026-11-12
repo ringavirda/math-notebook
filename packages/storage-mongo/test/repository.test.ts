@@ -106,10 +106,7 @@ describe("MongoNotebookRepository", () => {
   it("stores definitions embedded with their dependencies", async () => {
     await repository.save(priced());
     const stored = await raw((client) =>
-      client
-        .db(new URL(url).pathname.slice(1))
-        .collection("notebooks")
-        .findOne({}),
+      client.db().collection("notebooks").findOne({}),
     );
     expect(stored).toMatchObject({
       name: "main",
@@ -207,7 +204,7 @@ describe("MongoNotebookRepository", () => {
   it("names the field of a stored notebook that fails the schema", async () => {
     await raw((client) =>
       client
-        .db(new URL(url).pathname.slice(1))
+        .db()
         .collection("notebooks")
         .insertOne({ name: "bad", definitions: [{ name: "x", source: 5 }] }),
     );
@@ -218,15 +215,12 @@ describe("MongoNotebookRepository", () => {
 
   it("names the field of a stored evaluation that fails the schema", async () => {
     await raw((client) =>
-      client
-        .db(new URL(url).pathname.slice(1))
-        .collection("evaluations")
-        .insertOne({
-          notebook: "main",
-          source: "1",
-          kind: "other",
-          at: new Date(),
-        }),
+      client.db().collection("evaluations").insertOne({
+        notebook: "main",
+        source: "1",
+        kind: "other",
+        at: new Date(),
+      }),
     );
     const failure = await repository
       .history("main", { limit: 1, failedOnly: false })
@@ -238,7 +232,7 @@ describe("MongoNotebookRepository", () => {
   it("refuses a stored definition that does not parse", async () => {
     await raw((client) =>
       client
-        .db(new URL(url).pathname.slice(1))
+        .db()
         .collection("notebooks")
         .insertOne({
           name: "broken",
@@ -283,11 +277,29 @@ describe("MongoNotebookRepository", () => {
     await expect(
       raw((client) =>
         client
-          .db(new URL(url).pathname.slice(1))
+          .db()
           .collection("notebooks")
           .insertOne({ name: "main", definitions: [] }),
       ),
     ).rejects.toThrow(/duplicate key/);
+  });
+
+  it("takes the database from a multi-host URL", async () => {
+    const hosts = server.getUri().replace("mongodb://", "").replace("/", "");
+    const multi = new MongoNotebookRepository(
+      `mongodb://${hosts},${hosts}/multi%2Dhost`,
+      logger,
+    );
+    await multi.open();
+    try {
+      await multi.save(new Notebook("main"));
+      const names = await raw((client) =>
+        client.db("multi-host").collection("notebooks").distinct("name"),
+      );
+      expect(names).toEqual(["main"]);
+    } finally {
+      await multi.close();
+    }
   });
 
   it("rejects use before open", async () => {
