@@ -14,6 +14,7 @@ export const notebooks = sqliteTable("notebooks", {
   createdAt: integer("created_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),
+  savedAt: integer("saved_at", { mode: "timestamp_ms" }),
 });
 
 export const definitions = sqliteTable(

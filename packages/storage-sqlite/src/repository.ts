@@ -65,6 +65,7 @@ export class SqliteNotebookRepository implements NotebookRepository {
     return this.opened()
       .select({ name: notebooks.name })
       .from(notebooks)
+      .where(isNotNull(notebooks.savedAt))
       .orderBy(asc(notebooks.id))
       .all()
       .map((row) => row.name);
@@ -90,6 +91,10 @@ export class SqliteNotebookRepository implements NotebookRepository {
     const db = this.opened();
     db.transaction((tx) => {
       const notebookId = this.notebookId(tx, notebook.name);
+      tx.update(notebooks)
+        .set({ savedAt: new Date() })
+        .where(eq(notebooks.id, notebookId))
+        .run();
       tx.delete(definitions)
         .where(eq(definitions.notebookId, notebookId))
         .run();

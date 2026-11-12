@@ -8,6 +8,13 @@
       "when": 1794493875009,
       "tag": "0000_classy_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794494114656,
+      "tag": "0001_rapid_baron_strucker",
+      "breakpoints": true
     }
   ]
 }

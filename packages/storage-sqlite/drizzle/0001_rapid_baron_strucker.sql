@@ -1,0 +1,1 @@
+ALTER TABLE `notebooks` ADD `saved_at` integer;

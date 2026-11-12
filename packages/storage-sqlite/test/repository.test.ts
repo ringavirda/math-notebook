@@ -83,6 +83,9 @@ describe("SqliteNotebookRepository", () => {
     const other = new Notebook("other");
     other.run("x = 1");
     await repository.save(other);
+    expect((await repository.load("prices")).sources()).toEqual(
+      priceNotebook("prices").sources(),
+    );
     await repository.appendEvaluation(record("1 + 1", 0));
     await repository.appendEvaluation(record("2 + 2", 1, null, "other"));
     expect(await repository.names()).toEqual(["prices", "other"]);
@@ -92,6 +95,14 @@ describe("SqliteNotebookRepository", () => {
         await repository.history("prices", { limit: 10, failedOnly: false })
       ).map((r) => r.source),
     ).toEqual(["1 + 1"]);
+  });
+
+  it("lists only saved notebooks", async () => {
+    const repository = await memoryRepository();
+    await repository.appendEvaluation(record("1 + 1", 0, null, "scratch"));
+    expect(await repository.names()).toEqual([]);
+    await repository.save(new Notebook("empty"));
+    expect(await repository.names()).toEqual(["empty"]);
   });
 
   it("replaces the stored definitions on save", async () => {
