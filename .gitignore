@@ -1,0 +1,8 @@
+# Node modules.
+node_modules/
+
+# Rendered files.
+dist/
+
+# Notebook data.
+apps/cli/data/

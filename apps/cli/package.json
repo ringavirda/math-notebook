@@ -1,0 +1,32 @@
+{
+  "name": "@mathbook/cli-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@mathbook/cli": "workspace:*",
+    "@mathbook/config": "workspace:*",
+    "@mathbook/events": "workspace:*",
+    "@mathbook/host": "workspace:*",
+    "@mathbook/interpreter": "workspace:*",
+    "@mathbook/logging": "workspace:*",
+    "@mathbook/notebook": "workspace:*",
+    "@mathbook/storage-mongo": "workspace:*",
+    "@mathbook/storage-sqlite": "workspace:*",
+    "inversify": "catalog:",
+    "reflect-metadata": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "type": "shell",
+  "problemMatcher": "$tsc",
+  "presentation": {
+    "echo": true,
+    "reveal": "silent",
+    "focus": false,
+    "panel": "shared",
+    "showReuseMessage": true,
+    "clear": false
+  },
+  "tasks": [
+    {
+      "label": "Build all",
+      "command": "pnpm build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Typecheck all",
+      "command": "pnpm typecheck",
+      "group": "build"
+    },
+    {
+      "label": "Test all",
+      "command": "pnpm test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Lint",
+      "command": "pnpm lint",
+      "problemMatcher": "$eslint-stylish"
+    },
+    {
+      "label": "Format",
+      "command": "pnpm format"
+    },
+    {
+      "label": "Clean",
+      "command": "pnpm clean"
+    },
+    {
+      "label": "Start mongo",
+      "command": "docker compose up -d mongo"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@mathbook/notebook",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "default": "./dist/testing.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@mathbook/events": "workspace:*",
+    "@mathbook/interpreter": "workspace:*",
+    "@mathbook/logging": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

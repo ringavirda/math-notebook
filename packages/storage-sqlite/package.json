@@ -1,0 +1,36 @@
+{
+  "name": "@mathbook/storage-sqlite",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rimraf dist",
+    "generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@mathbook/logging": "workspace:*",
+    "@mathbook/notebook": "workspace:*",
+    "better-sqlite3": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "catalog:",
+    "drizzle-kit": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
