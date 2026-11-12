@@ -1,0 +1,55 @@
+import "reflect-metadata";
+import { PassThrough, Readable } from "node:stream";
+import { stripVTControlCharacters } from "node:util";
+import { CLI } from "@mathbook/cli";
+import { EventBus } from "@mathbook/events";
+import { StderrLogger } from "@mathbook/logging";
+import { NotebookService, type NotebookEvent } from "@mathbook/notebook";
+import { MemoryNotebookRepository } from "@mathbook/notebook/testing";
+import { MathCommands } from "../src/commands.js";
+import type { Config } from "../src/config.js";
+import { createExecutor } from "../src/executor.js";
+
+export function createHarness(notebook = "main") {
+  const out = new PassThrough();
+  const err = new PassThrough();
+  const cli = new CLI(Readable.from([]), out, err);
+  const repository = new MemoryNotebookRepository();
+  const events = new EventBus<NotebookEvent>();
+  const logs: string[] = [];
+  const logger = new StderrLogger("debug", (line) => logs.push(line));
+  const service = new NotebookService(
+    repository,
+    events,
+    logger,
+    () => new Date("2026-11-12T10:00:00Z"),
+  );
+  const config = {
+    MATHBOOK_STORAGE: "sqlite",
+    MATHBOOK_DB: ":memory:",
+    MATHBOOK_MONGO_URL: "",
+    MATHBOOK_NOTEBOOK: notebook,
+  } satisfies Config;
+  const executor = createExecutor(
+    cli,
+    logger,
+    new MathCommands(cli, service, config),
+  );
+  let printed = "";
+  let failed = "";
+  const lines = (text: string) =>
+    stripVTControlCharacters(text).split("\n").slice(0, -1);
+  return {
+    executor,
+    repository,
+    logs,
+    stdout(): string[] {
+      printed += out.read()?.toString() ?? "";
+      return lines(printed);
+    },
+    stderr(): string[] {
+      failed += err.read()?.toString() ?? "";
+      return lines(failed);
+    },
+  };
+}

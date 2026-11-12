@@ -6,8 +6,8 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "dev": "tsc --incremental && concurrently --kill-others --raw \"tsc --watch --incremental --preserveWatchOutput\" \"node --watch dist/main.js\"",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit && tsc -p test",
+    "test": "vitest run",
     "clean": "rimraf dist"
   },
   "dependencies": {
