@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
-    "typecheck": "tsc --noEmit && tsc -p test",
+    "typecheck": "tsc --noEmit && tsc -p test && tsc -p tsconfig.config.json",
     "test": "vitest run",
     "clean": "rimraf dist",
     "generate": "drizzle-kit generate"

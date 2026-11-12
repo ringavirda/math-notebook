@@ -127,6 +127,48 @@ describe("SqliteNotebookRepository", () => {
     expect(history[0]!.at).toEqual(new Date(Date.UTC(2026, 10, 12, 10, 2)));
   });
 
+  it("orders records sharing a timestamp by insertion, newest first", async () => {
+    const repository = await memoryRepository();
+    for (const source of ["a", "b", "c"]) {
+      await repository.appendEvaluation(record(source, 0));
+    }
+    const history = await repository.history("prices", {
+      limit: 10,
+      failedOnly: false,
+    });
+    expect(history.map((r) => r.source)).toEqual(["c", "b", "a"]);
+  });
+
+  it.each([
+    ["an unknown kind", "UPDATE evaluations SET kind = 'bogus'"],
+    [
+      "an unknown error stage",
+      "UPDATE evaluations SET error_stage = 'bogus', error_message = 'x'",
+    ],
+    [
+      "an error stage without a message",
+      "UPDATE evaluations SET error_stage = 'domain', error_message = NULL",
+    ],
+    [
+      "an error message without a stage",
+      "UPDATE evaluations SET error_stage = NULL, error_message = 'x'",
+    ],
+  ])("raises StorageError for a stored row with %s", async (_label, update) => {
+    const folder = await mkdtemp(join(tmpdir(), "mathbook-"));
+    folders.push(folder);
+    const path = join(folder, "notebook.db");
+    const repository = new SqliteNotebookRepository(path, logger);
+    await repository.open();
+    open.push(repository);
+    await repository.appendEvaluation(record("1 + 1", 0));
+    const raw = new Database(path);
+    raw.prepare(update).run();
+    raw.close();
+    await expect(
+      repository.history("prices", { limit: 10, failedOnly: false }),
+    ).rejects.toThrow(StorageError);
+  });
+
   it("filters history to failures and restores the error", async () => {
     const repository = await memoryRepository();
     await repository.appendEvaluation(record("1 + 1", 0));

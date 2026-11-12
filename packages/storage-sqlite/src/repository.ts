@@ -164,12 +164,9 @@ export class SqliteNotebookRepository implements NotebookRepository {
     return rows.map(({ evaluations: row }) => ({
       notebook: name,
       source: row.source,
-      kind: row.kind,
+      kind: toKind(row.kind),
       result: row.result,
-      error:
-        row.errorStage === null || row.errorMessage === null
-          ? null
-          : { stage: toStage(row.errorStage), message: row.errorMessage },
+      error: toError(row.errorStage, row.errorMessage),
       at: row.at,
     }));
   }
@@ -208,4 +205,27 @@ function toStage(value: string): ErrorStage {
     throw new StorageError("evaluations", `unknown error stage '${value}'`);
   }
   return stage;
+}
+
+function toKind(value: string): EvaluationRecord["kind"] {
+  if (value !== "expression" && value !== "definition") {
+    throw new StorageError("evaluations", `unknown kind '${value}'`);
+  }
+  return value;
+}
+
+function toError(
+  stage: string | null,
+  message: string | null,
+): EvaluationRecord["error"] {
+  if (stage === null && message === null) {
+    return null;
+  }
+  if (stage === null || message === null) {
+    throw new StorageError(
+      "evaluations",
+      "error_stage and error_message must be set together",
+    );
+  }
+  return { stage: toStage(stage), message };
 }
