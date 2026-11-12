@@ -58,7 +58,7 @@ describe("lines", () => {
     const { stderr, statuses } = await session(["x = 1", "y = 1 / x", "x = 0"]);
     expect(statuses).toEqual(["ok", "ok", "failed"]);
     expect(stderr()).toHaveLength(1);
-    expect(stderr()[0]).toContain("y");
+    expect(stderr()[0]).toMatch(/^Err: Cannot define 'x': 'y' would fail/);
   });
 
   it("calls an unknown :word a usage error", async () => {
@@ -146,6 +146,17 @@ describe("commands", () => {
     expect(lines[0]).toContain(":help");
     expect(lines.some((l) => l.includes(":history [n] [failed]"))).toBe(true);
     expect(lines.at(-1)).toContain(":ls");
+  });
+
+  it(":q is listed and ends a one-shot run as done", async () => {
+    const { stdout, statuses } = await session([":help", ":q"]);
+    expect(stdout().some((l) => l.includes(":q - "))).toBe(true);
+    expect(statuses).toEqual(["ok", "ok"]);
+  });
+
+  it("logs the time of a run at debug level", async () => {
+    const { logs } = await session(["x = 7"]);
+    expect(logs).toContain("[debug] run(main, x = 7) took 0 ms");
   });
 
   it("starts in the notebook of the configuration", async () => {

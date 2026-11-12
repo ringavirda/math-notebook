@@ -130,7 +130,7 @@ describe.each(["sqlite", "mongo"] as const)("%s storage", (storage) => {
       expect(result.stdout).toContain("144\n");
       expect(result.stdout).toContain("price = 50\n  subtotal = 100\n");
       expect(result.stdout).toMatch(/\d{2}:\d{2}:\d{2} 1 \+ => Syntax error/);
-      expect(result.stdout).toContain("total(n) = n * price * (1 + rate)\n");
+      expect(result.stdout).toContain("\nsubtotal = 100\n");
     },
     timeout,
   );

@@ -125,6 +125,12 @@ export class MathCommands {
           for (const record of records) this.cli.echo(formatRecord(record));
         },
       },
+      {
+        selectors: [":q"],
+        params: [],
+        description: "Quit; end of input does too.",
+        action: () => undefined,
+      },
     ];
   }
 }

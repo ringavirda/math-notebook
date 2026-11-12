@@ -56,7 +56,7 @@ A line starting with `:` is a command, any other line is evaluated.
 | `MATHBOOK_NOTEBOOK`  | `main`                               | notebook a session starts in          |
 | `LOG_LEVEL`          | `warn`                               | `debug`, `info`, `warn` or `error`    |
 
-At `info` every change is logged; at `debug` also each SQL statement or MongoDB command and the
+At `info` every definition, recomputation, removal and evaluation is logged; at `debug` also each SQL statement or MongoDB command and the
 time of each call.
 
 ## MongoDB
