@@ -77,7 +77,7 @@ beforeAll(async () => {
       ...process.env,
       PORT: String(port),
       MATHBOOK_DB: db,
-      LOG_LEVEL: "info",
+      LOG_LEVEL: "",
     },
   });
   exit = new Promise((done) => child.on("close", done));

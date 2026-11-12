@@ -58,7 +58,7 @@ A line starting with `:` is a command, any other line is evaluated.
 | `MATHBOOK_MONGO_URL` | `mongodb://localhost:27017/mathbook` | MongoDB URL; the path is the database |
 | `MATHBOOK_NOTEBOOK`  | `main`                               | notebook a session starts in          |
 | `PORT`               | `3000`                               | port of the API (`apps/api` only)     |
-| `LOG_LEVEL`          | `warn`                               | `debug`, `info`, `warn` or `error`    |
+| `LOG_LEVEL`          | `warn`, `info` for `apps/api`        | `debug`, `info`, `warn` or `error`    |
 
 At `info` every definition, recomputation, removal and evaluation is logged; at `debug` also each SQL statement or MongoDB command and the
 time of each call.

@@ -1,6 +1,6 @@
 import { Container } from "inversify";
 import { readEnv } from "./config.js";
-import type { Logger } from "@mathbook/common";
+import type { LogLevel, Logger } from "@mathbook/common";
 import { StderrLogger } from "./logger.js";
 import { z } from "zod";
 
@@ -36,10 +36,14 @@ export interface HostBuilder {
   configuration<T>(token: symbol, schema: z.ZodType<T>): HostBuilder;
   /**
    * Binds a `Logger` under `LOGGER` at `build()`; the level comes from `LOG_LEVEL` (debug, info,
-   * warn or error, default warn).
+   * warn or error, default `options.level`).
    * @param options.write receives each finished log line; stderr when omitted.
+   * @param options.level the level used when `LOG_LEVEL` is not set; warn when omitted.
    */
-  logging(options?: { write?: (line: string) => void }): HostBuilder;
+  logging(options?: {
+    write?: (line: string) => void;
+    level?: LogLevel;
+  }): HostBuilder;
   /**
    * Registers a service to start and stop with the host. Services start in the order of the
    * calls and stop in the reverse order.
@@ -73,9 +77,10 @@ export interface Host {
   run(main?: (host: Host) => Promise<number>): Promise<number>;
 }
 
-const levelSchema = z.object({
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("warn"),
-});
+const levelSchema = (fallback: LogLevel) =>
+  z.object({
+    LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default(fallback),
+  });
 
 const messageOf = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -92,7 +97,9 @@ export function createHostBuilder(options: HostOptions = {}): HostBuilder {
 
   const settings: { token: symbol; schema: z.ZodType }[] = [];
   const hostedTokens: symbol[] = [];
-  let logging: { write?: (line: string) => void } | undefined;
+  let logging:
+    | { write?: (line: string) => void; level?: LogLevel }
+    | undefined;
 
   const builder: HostBuilder = {
     services,
@@ -115,7 +122,7 @@ export function createHostBuilder(options: HostOptions = {}): HostBuilder {
       let write: ((line: string) => void) | undefined;
       if (logging) {
         write = logging.write;
-        const { LOG_LEVEL } = readEnv(levelSchema, env);
+        const { LOG_LEVEL } = readEnv(levelSchema(logging.level ?? "warn"), env);
         services
           .bind<Logger>(LOGGER)
           .toConstantValue(new StderrLogger(LOG_LEVEL, write));

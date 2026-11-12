@@ -13,7 +13,7 @@ import {
 try {
   const builder = createHostBuilder()
     .configuration(CONFIG, configSchema)
-    .logging()
+    .logging({ level: "info" })
     .hosted(REPOSITORY_SERVICE)
     .hosted(HTTP_SERVICE);
   addServices(builder.services);

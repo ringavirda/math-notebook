@@ -232,6 +232,22 @@ describe("createHostBuilder", () => {
     expect(quiet).toEqual([]);
   });
 
+  it("uses the level option when LOG_LEVEL is not set and LOG_LEVEL over it", () => {
+    const lines: string[] = [];
+    const write = (line: string) => lines.push(line);
+    createHostBuilder({ argv: [], env: {} })
+      .logging({ write, level: "info" })
+      .build()
+      .services.get<Logger>(LOGGER)
+      .info("shown");
+    createHostBuilder({ argv: [], env: { LOG_LEVEL: "error" } })
+      .logging({ write, level: "info" })
+      .build()
+      .services.get<Logger>(LOGGER)
+      .info("hidden");
+    expect(lines).toEqual(["[info] shown"]);
+  });
+
   it("exposes argv in the host and the services", () => {
     const host = createHostBuilder({ argv: ["1 + 2"], env: {} }).build();
     expect(host.argv).toEqual(["1 + 2"]);
