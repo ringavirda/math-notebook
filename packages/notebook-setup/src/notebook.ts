@@ -29,7 +29,7 @@ export const EVENT_LOG_SERVICE: unique symbol = Symbol(
 
 /** Opens the repository when the host starts and closes it when the host stops. */
 export class RepositoryService implements HostedService {
-  /** @param repository Repository opened on start and closed on stop. */
+  /** @param repository repository opened on start and closed on stop. */
   constructor(private readonly repository: NotebookRepository) {}
 
   start(): Promise<void> {
@@ -46,8 +46,8 @@ export class EventLogService implements HostedService {
   private unsubscribe: (() => void) | undefined;
 
   /**
-   * @param events Bus whose events are logged.
-   * @param logger Receives one info line per event.
+   * @param events bus whose events are logged.
+   * @param logger receives one info line per event.
    */
   constructor(
     private readonly events: EventBus<NotebookEvent>,

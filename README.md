@@ -8,8 +8,8 @@ around them, each in its own package.
 
 ## Layout
 
-- `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the command line, `commands.ts`
-  holds the commands, `format.ts` the output.
+- `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the command line, `app.ts` runs it,
+  `executor.ts` runs one line, `commands.ts` holds the commands, `format.ts` the output.
 - `apps/api` the same libraries behind HTTP on `node:http`: `routes.ts` maps requests to the
   notebook service, `server.ts` is the hosted service, `services.ts` binds it,
   `requests.http` holds the requests to send.
@@ -92,7 +92,7 @@ the SQLite file with the CLI, so a value defined over HTTP is read by `pnpm --fi
     GET    /notebooks/:name/history?limit=10&failed    evaluations, newest first
 
 Errors are JSON `{"error": {"stage", "message"}}`: 400 for a line that fails an interpreter stage
-(with its `span`) or a bad request, 404 for an unknown notebook, definition or route, 409 for a refused removal or a taken name, 400 with stage `domain` for an invalid notebook name, 413 for a body over 64 KiB,
+(with its `span`) or a bad request, 404 for an unknown notebook, definition or route, 409 for a refused definition or removal (something depends on it) or a taken name, 400 with stage `domain` for an invalid notebook name, 413 for a body over 64 KiB,
 500 `Unexpected error` for anything else.
 
 ## MongoDB

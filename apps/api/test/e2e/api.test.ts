@@ -44,6 +44,7 @@ let exit: Promise<number | null>;
 interface Answer {
   status: number;
   type: string | null;
+  connection: string | null;
   body: any;
 }
 
@@ -57,6 +58,7 @@ async function call(
   return {
     status: response.status,
     type: response.headers.get("content-type"),
+    connection: response.headers.get("connection"),
     body: text === "" ? undefined : JSON.parse(text),
   };
 }
@@ -189,6 +191,7 @@ describe("api", () => {
     );
     expect(answer.status).toBe(413);
     expect(answer.type).toBe("application/json");
+    expect(answer.connection).toBe("close");
     expect(answer.body.error.stage).toBe("request");
   });
 

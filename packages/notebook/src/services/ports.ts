@@ -16,9 +16,11 @@ export interface EvaluationRecord {
   at: Date;
 }
 
+/** Which of a notebook's evaluation records `history` returns. */
 export interface HistoryQuery {
   /** At most this many records, at least 1. */
   limit: number;
+  /** Keep only the records that carry an error. */
   failedOnly: boolean;
 }
 

@@ -1,4 +1,9 @@
-import { createServer, type Server, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type OutgoingHttpHeaders,
+  type Server,
+  type ServerResponse,
+} from "node:http";
 import type { AddressInfo } from "node:net";
 import type { Logger } from "@mathbook/common";
 import type { HostedService } from "@mathbook/hosting";
@@ -7,19 +12,27 @@ import { handle, type Reply } from "./routes.js";
 
 const MAX_BODY_BYTES = 64 * 1024;
 
-function send(response: ServerResponse, { status, body }: Reply): void {
+function send(
+  response: ServerResponse,
+  { status, body }: Reply,
+  headers: OutgoingHttpHeaders = {},
+): void {
   if (body === undefined) {
-    response.writeHead(status);
+    response.writeHead(status, headers);
     return void response.end();
   }
   const text = JSON.stringify(body);
-  response.writeHead(status, { "Content-Type": "application/json" });
+  response.writeHead(status, {
+    "Content-Type": "application/json",
+    ...headers,
+  });
   response.end(text);
 }
 
 /**
  * The HTTP front end: listens when the host starts and closes when it stops, letting requests in
- * flight finish. A body over 64 KiB answers 413.
+ * flight finish. A body over 64 KiB answers 413 with `Connection: close`, and the socket closes
+ * after the answer.
  */
 export class HttpService implements HostedService {
   private readonly server: Server;
@@ -44,16 +57,19 @@ export class HttpService implements HostedService {
         if (size <= MAX_BODY_BYTES) return void chunks.push(chunk);
         tooLarge = true;
         chunks.length = 0;
-        send(response, {
-          status: 413,
-          body: {
-            error: {
-              stage: "request",
-              message: `Body is over ${MAX_BODY_BYTES} bytes`,
+        send(
+          response,
+          {
+            status: 413,
+            body: {
+              error: {
+                stage: "request",
+                message: `Body is over ${MAX_BODY_BYTES} bytes`,
+              },
             },
           },
-        });
-        response.once("finish", () => request.destroy());
+          { Connection: "close" },
+        );
       });
       request.on("end", () => {
         if (tooLarge) return;
