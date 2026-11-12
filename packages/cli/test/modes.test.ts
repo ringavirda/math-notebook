@@ -41,6 +41,18 @@ describe("runInteractive", () => {
     expect(lines.at(-1)).toMatch(/Bye$/);
   });
 
+  it("calls a prompt function before every line", async () => {
+    const { cli, executor, stdout } = withEcho(["say a\n", "say b\n"]);
+    let count = 0;
+    await runInteractive(cli, executor, {
+      ...options,
+      prompt: () => `${++count}>`,
+    });
+    const lines = stdout();
+    expect(lines).toContain("1> said a");
+    expect(lines).toContain("2> said b");
+  });
+
   it("ends at end of input with the goodbye", async () => {
     const { cli, executor, stdout } = withEcho(["say a\n"]);
     await runInteractive(cli, executor, options);

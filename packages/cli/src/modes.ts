@@ -22,8 +22,8 @@ export interface InteractiveOptions {
   readonly banner: readonly string[];
   /** Title line printed after the last line is read. */
   readonly goodbye: string;
-  /** Text shown before each line. */
-  readonly prompt: string;
+  /** Text shown before each line; a function is called before every line. */
+  readonly prompt: string | (() => string);
   /** Lines that end the session, compared trimmed and lower-cased; `:q`, `:quit`, `:exit` when omitted. */
   readonly quitWords?: readonly string[];
 }
@@ -44,7 +44,9 @@ export async function runInteractive(
   const quitWords = options.quitWords ?? [":q", ":quit", ":exit"];
   for (const line of options.banner) cli.echoTitle(line);
   for (;;) {
-    const line = await cli.read(options.prompt);
+    const prompt =
+      typeof options.prompt === "function" ? options.prompt() : options.prompt;
+    const line = await cli.read(prompt);
     if (line === null || quitWords.includes(line.trim().toLowerCase())) break;
     await executor.execute(line);
   }

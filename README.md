@@ -42,12 +42,18 @@ around them, each in its own package.
     pnpm --filter @mathbook/api start                  HTTP API on PORT, default 3000, until Ctrl+C
     pnpm --filter @mathbook/api dev                    rebuild and restart on change
 
-A line starting with `:` is a command, any other line is evaluated.
+A line starting with `:` is a command, any other line is evaluated. A session creates its start
+notebook (`MATHBOOK_NOTEBOOK`) when it is missing; any other notebook is made with `:new`. The
+prompt shows the current notebook.
 
     :help [command]       commands
     :ls                   definitions of the current notebook with values
-    :use <name>           switch notebook (created on first save)
-    :notebooks            notebook names
+    :new <name>           create a notebook and switch to it
+    :use <name>           switch to an existing notebook
+    :notebooks            notebook names, * marks the current one
+    :drop <name>          drop a notebook and its history, after asking (not the current one)
+    :rename <new>         rename the current notebook
+    :clear                empty the current notebook's history
     :rm <name>            remove a definition
     :deps <name>          what it uses and what uses it
     :history [n] [failed] last n evaluations (default 10)

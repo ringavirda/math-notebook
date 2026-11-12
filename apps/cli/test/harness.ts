@@ -10,10 +10,10 @@ import { MathCommands } from "../src/commands.js";
 import type { Config } from "../src/config.js";
 import { createExecutor } from "../src/executor.js";
 
-export function createHarness(notebook = "main") {
+export function createHarness(notebook = "main", input: string[] = []) {
   const out = new PassThrough();
   const err = new PassThrough();
-  const cli = new CLI(Readable.from([]), out, err);
+  const cli = new CLI(Readable.from(input), out, err);
   const repository = new MemoryNotebookRepository();
   const events = new EventBus<NotebookEvent>();
   const logs: string[] = [];

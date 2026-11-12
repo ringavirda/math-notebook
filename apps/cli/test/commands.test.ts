@@ -2,8 +2,12 @@ import { StorageError } from "@mathbook/notebook";
 import { describe, expect, it, vi } from "vitest";
 import { createHarness } from "./harness.js";
 
-async function session(lines: string[], notebook?: string) {
-  const harness = createHarness(notebook);
+async function session(
+  lines: string[],
+  notebook?: string,
+  input: string[] = [],
+) {
+  const harness = createHarness(notebook, input);
   await harness.ready;
   const statuses: string[] = [];
   for (const line of lines) statuses.push(await harness.executor.execute(line));
@@ -88,21 +92,128 @@ describe("commands", () => {
     ]);
   });
 
-  it(":use switches the notebook and :notebooks lists saved ones", async () => {
+  it(":new creates and switches, :notebooks marks the current one", async () => {
     const { stdout } = await session([
       "a = 1",
-      ":use other",
+      ":new other",
       ":ls",
       "b = 2",
       ":notebooks",
     ]);
     expect(stdout()).toEqual([
       "a = 1",
-      "Using notebook other",
+      "Created other",
       "Nothing defined yet.",
       "b = 2",
-      "main",
-      "other",
+      "  main",
+      "* other",
+    ]);
+  });
+
+  it(":new refuses a taken name and a bad name", async () => {
+    const { stderr, statuses } = await session([":new main", ":new 1x"]);
+    expect(statuses).toEqual(["failed", "failed"]);
+    expect(stderr()).toHaveLength(2);
+  });
+
+  it(":use switches to an existing notebook and refuses a missing one", async () => {
+    const { stdout, stderr, statuses } = await session([
+      ":new other",
+      "b = 2",
+      ":use main",
+      ":ls",
+      ":use nope",
+      ":use other",
+      ":ls",
+    ]);
+    expect(statuses).toEqual(["ok", "ok", "ok", "ok", "usage", "ok", "ok"]);
+    expect(stderr()).toEqual([
+      "Err: No notebook 'nope'; create it with :new nope",
+    ]);
+    expect(stdout()).toEqual([
+      "Created other",
+      "b = 2",
+      "Using notebook main",
+      "Nothing defined yet.",
+      "Using notebook other",
+      "b = 2",
+    ]);
+  });
+
+  it(":drop refuses the current notebook", async () => {
+    const { stderr, statuses, repository } = await session([":drop main"]);
+    expect(statuses).toEqual(["usage"]);
+    expect(stderr()).toEqual([
+      "Err: You are in main; :use another notebook first",
+    ]);
+    expect(await repository.names()).toEqual(["main"]);
+  });
+
+  it(":drop asks and drops on y or yes in any case", async () => {
+    for (const answer of ["y\n", " YES \n"]) {
+      const { stdout, repository } = await session(
+        [":new a", "x = 1", ":use main", ":drop a"],
+        "main",
+        [answer],
+      );
+      expect(stdout().at(-1)).toBe(
+        "Drop a with 1 definitions and its history? (y/N) Dropped a",
+      );
+      expect(await repository.names()).toEqual(["main"]);
+    }
+  });
+
+  it(":drop keeps the notebook on n, on another word and at end of input", async () => {
+    for (const input of [["n\n"], ["maybe\n"], []]) {
+      const { stdout, repository } = await session(
+        [":new a", ":use main", ":drop a"],
+        "main",
+        input,
+      );
+      expect(stdout().at(-1)).toBe(
+        "Drop a with 0 definitions and its history? (y/N) Kept a",
+      );
+      expect(await repository.names()).toEqual(["a", "main"]);
+    }
+  });
+
+  it(":drop of a missing notebook fails without asking", async () => {
+    const { stderr, statuses } = await session([":drop nope"]);
+    expect(statuses).toEqual(["failed"]);
+    expect(stderr()).toEqual(["Err: No notebook 'nope'"]);
+  });
+
+  it(":rename renames the current notebook and stays in it", async () => {
+    const { stdout, repository } = await session([
+      "a = 1",
+      ":rename work",
+      ":ls",
+      ":notebooks",
+    ]);
+    expect(stdout()).toEqual(["a = 1", "Renamed to work", "a = 1", "* work"]);
+    expect(await repository.names()).toEqual(["work"]);
+  });
+
+  it(":rename refuses a taken name", async () => {
+    const { statuses, stderr } = await session([":new b", ":rename main"]);
+    expect(statuses).toEqual(["ok", "failed"]);
+    expect(stderr()).toHaveLength(1);
+  });
+
+  it(":clear empties the history and keeps the definitions", async () => {
+    const { stdout } = await session([
+      "a = 1",
+      "a + 1",
+      ":clear",
+      ":history",
+      ":ls",
+    ]);
+    expect(stdout()).toEqual([
+      "a = 1",
+      "2",
+      "Cleared 2 evaluations",
+      "No evaluations.",
+      "a = 1",
     ]);
   });
 

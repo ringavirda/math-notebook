@@ -25,6 +25,11 @@ export class MathCommands {
     this.notebook = config.MATHBOOK_NOTEBOOK;
   }
 
+  /** The notebook the session is in. */
+  get current(): string {
+    return this.notebook;
+  }
+
   /** Creates the notebook the session starts in when it does not exist. */
   async start(): Promise<void> {
     await this.service.ensure(this.notebook);
@@ -69,11 +74,24 @@ export class MathCommands {
         },
       },
       {
+        selectors: [":new"],
+        params: ["name"],
+        description: "Create a notebook and switch to it.",
+        action: async (name: string) => {
+          await this.service.create(name);
+          this.notebook = name;
+          this.cli.echo(`Created ${name}`);
+        },
+      },
+      {
         selectors: [":use"],
         params: ["name"],
-        description: "Switch notebook; it is created on first save.",
+        description: "Switch to an existing notebook.",
         action: async (name: string) => {
-          await this.service.ensure(name);
+          if (!(await this.service.list()).includes(name))
+            throw new UsageError(
+              `No notebook '${name}'; create it with :new ${name}`,
+            );
           this.notebook = name;
           this.cli.echo(`Using notebook ${name}`);
         },
@@ -81,11 +99,49 @@ export class MathCommands {
       {
         selectors: [":notebooks"],
         params: [],
-        description: "Names of the saved notebooks.",
+        description: "Names of the notebooks; * marks the current one.",
         action: async () => {
           const names = await this.service.list();
-          if (names.length === 0) this.cli.echo("No saved notebooks.");
-          for (const name of names) this.cli.echo(name);
+          for (const name of names)
+            this.cli.echo(`${name === this.notebook ? "*" : " "} ${name}`);
+        },
+      },
+      {
+        selectors: [":drop"],
+        params: ["name"],
+        description: "Drop a notebook with its history, after asking.",
+        action: async (name: string) => {
+          if (name === this.notebook)
+            throw new UsageError(
+              `You are in ${name}; :use another notebook first`,
+            );
+          const count = (await this.service.show(name)).length;
+          const answer = await this.cli.read(
+            `Drop ${name} with ${count} definitions and its history? (y/N)`,
+          );
+          if (["y", "yes"].includes(answer?.trim().toLowerCase() ?? "")) {
+            await this.service.drop(name);
+            this.cli.echo(`Dropped ${name}`);
+          } else this.cli.echo(`Kept ${name}`);
+        },
+      },
+      {
+        selectors: [":rename"],
+        params: ["new"],
+        description: "Rename the current notebook.",
+        action: async (to: string) => {
+          await this.service.rename(this.notebook, to);
+          this.notebook = to;
+          this.cli.echo(`Renamed to ${to}`);
+        },
+      },
+      {
+        selectors: [":clear"],
+        params: [],
+        description: "Empty the current notebook's history.",
+        action: async () => {
+          const count = await this.service.clearHistory(this.notebook);
+          this.cli.echo(`Cleared ${count} evaluations`);
         },
       },
       {

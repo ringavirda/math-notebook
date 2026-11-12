@@ -20,7 +20,7 @@ subtotal / 0
 withTax(1, 2)
 :rm tax
 :rm shipping
-:use geometry
+:new geometry
 r = 2
 area = pi * r ^ 2
 circumference = 2 * pi * r
@@ -34,7 +34,7 @@ sqrt(-1)
 area(2)
 pi = 3
 (1 + 2
-:use loan
+:new loan
 principal = 10000
 yearly = 0.12
 years = 5
@@ -50,7 +50,7 @@ grow(p, n) = p * (1 + yearly) ^ n
 round(grow(principal, 10))
 yearly = paid / principal
 log(0)
-:use units
+:new units
 km = 1000
 mile = 1609.344
 toMiles(m) = m / mile

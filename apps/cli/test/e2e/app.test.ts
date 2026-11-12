@@ -136,6 +136,46 @@ describe.each(["sqlite", "mongo"] as const)("%s storage", (storage) => {
   );
 
   it(
+    "a fresh database lists nothing and exits 0",
+    async () => {
+      const result = await run([":ls"], await setup());
+      expect(result.code).toBe(0);
+      expect(result.stdout).toBe("Nothing defined yet.\n");
+    },
+    timeout,
+  );
+
+  it(
+    "switches notebooks, shows them in the prompt and drops one after asking",
+    async () => {
+      const env = await setup();
+      const result = await run(
+        [],
+        env,
+        ":new loan\n:use main\n:drop loan\ny\n:notebooks\n",
+      );
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain("main> Created loan\nloan> ");
+      expect(result.stdout).toContain("Dropped loan\nmain> ");
+      expect(result.stdout).toContain("main> * main\n");
+      expect(result.stdout).not.toContain("  loan\n");
+    },
+    timeout,
+  );
+
+  it(
+    "a missing notebook in :use exits 2 with the message",
+    async () => {
+      const result = await run([":use nope"], await setup());
+      expect(result.code).toBe(2);
+      expect(result.stderr).toContain(
+        "No notebook 'nope'; create it with :new nope",
+      );
+    },
+    timeout,
+  );
+
+  it(
     "keeps definitions between runs",
     async () => {
       const env = await setup();

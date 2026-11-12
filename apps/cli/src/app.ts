@@ -17,7 +17,8 @@ export async function runApp(host: Host): Promise<ExitCode> {
   const cli = host.services.get(CLI);
   const executor = host.services.get(Executor);
   try {
-    await host.services.get(MathCommands).start();
+    const commands = host.services.get(MathCommands);
+    await commands.start();
     if (host.argv.length > 0) return await runOnce(executor, host.argv);
     await runInteractive(cli, executor, {
       banner: [
@@ -25,7 +26,7 @@ export async function runApp(host: Host): Promise<ExitCode> {
         "Type a definition or an expression, :help lists the commands.",
       ],
       goodbye: "Bye.",
-      prompt: ">",
+      prompt: () => `${commands.current}>`,
     });
     return 0;
   } finally {
