@@ -1,5 +1,6 @@
 import { EvalError, type Span } from "../errors.js";
-import { DomainFault, type Scope } from "../semantic/scope.js";
+import { DomainFault } from "../evaluation/builtins.js";
+import type { Scope } from "../semantic/scope.js";
 
 /** Precedence used to decide where `toString` needs parentheses; higher binds tighter. */
 const ADDITIVE = 1;

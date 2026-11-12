@@ -450,12 +450,6 @@ importers:
       '@mathbook/storage-sqlite':
         specifier: workspace:*
         version: link:../storage-sqlite
-      inversify:
-        specifier: 'catalog:'
-        version: 8.3.0(reflect-metadata@0.2.2)
-      reflect-metadata:
-        specifier: 'catalog:'
-        version: 0.2.2
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -463,6 +457,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
+      reflect-metadata:
+        specifier: 'catalog:'
+        version: 0.2.2
       rimraf:
         specifier: 'catalog:'
         version: 6.1.4

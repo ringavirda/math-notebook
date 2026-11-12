@@ -5,7 +5,6 @@ import { z } from "zod";
 import type { Logger } from "@mathbook/common";
 
 import {
-  ARGV,
   ConfigError,
   LOGGER,
   createHostBuilder,
@@ -248,10 +247,9 @@ describe("createHostBuilder", () => {
     expect(lines).toEqual(["[info] shown"]);
   });
 
-  it("exposes argv in the host and the services", () => {
+  it("exposes argv in the host", () => {
     const host = createHostBuilder({ argv: ["1 + 2"], env: {} }).build();
     expect(host.argv).toEqual(["1 + 2"]);
-    expect(host.services.get(ARGV)).toEqual(["1 + 2"]);
     expect(host.services).toBeInstanceOf(Container);
   });
 });

@@ -22,7 +22,12 @@ export interface Call {
 }
 
 /** A failure of the request itself, as opposed to the notebook. */
-class RequestError extends Error {}
+class RequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = new.target.name;
+  }
+}
 
 const requestError = (message: string): Reply => ({
   status: 400,

@@ -2,7 +2,10 @@ import type { z } from "zod";
 
 /** A setting that holds a value the app does not accept. */
 export class ConfigError extends Error {
-  override name = "ConfigError";
+  constructor(message: string) {
+    super(message);
+    this.name = new.target.name;
+  }
 }
 
 /**

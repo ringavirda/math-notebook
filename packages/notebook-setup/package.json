@@ -24,12 +24,11 @@
     "@mathbook/notebook": "workspace:*",
     "@mathbook/storage-mongo": "workspace:*",
     "@mathbook/storage-sqlite": "workspace:*",
-    "inversify": "catalog:",
-    "reflect-metadata": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "reflect-metadata": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"

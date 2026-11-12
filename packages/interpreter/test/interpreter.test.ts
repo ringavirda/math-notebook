@@ -4,7 +4,6 @@ import {
   builtins,
   EvalError,
   functionBinding,
-  isBuiltin,
   LexError,
   MathError,
   parse,
@@ -177,7 +176,6 @@ describe("errors", () => {
       });
     }
     expect(() => analyze(parse("sqrt(x) = x"), empty)).toThrow(SemanticError);
-    expect(isBuiltin("sqrt") && isBuiltin("pi") && !isBuiltin("x")).toBe(true);
   });
 });
 

@@ -7,9 +7,6 @@ import { z } from "zod";
 /** Token of the `Logger` bound by `HostBuilder.logging`. */
 export const LOGGER: unique symbol = Symbol("host.logger");
 
-/** Token of the argument list (`readonly string[]`) bound in every host's services. */
-export const ARGV: unique symbol = Symbol("host.argv");
-
 /** A service the host starts before `main` and stops after it. */
 export interface HostedService {
   start(): Promise<void>;
@@ -93,7 +90,6 @@ export function createHostBuilder(options: HostOptions = {}): HostBuilder {
   const argv = options.argv ?? process.argv.slice(2);
   const env = options.env ?? process.env;
   const services = new Container();
-  services.bind<readonly string[]>(ARGV).toConstantValue(argv);
 
   const settings: { token: symbol; schema: z.ZodType }[] = [];
   const hostedTokens: symbol[] = [];

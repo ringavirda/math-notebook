@@ -5,6 +5,9 @@ export interface HasLogger {
   readonly logger: Logger;
 }
 
+const show = (arg: unknown): string =>
+  typeof arg === "string" ? arg : (JSON.stringify(arg) ?? String(arg));
+
 /**
  * Method decorator for async methods of a class with a `logger`. Writes
  * `<key>(<arguments>) took <n> ms` at debug level, or `<key>(<arguments>) failed after <n> ms`
@@ -20,7 +23,7 @@ export function logged(
 ): void {
   const original = descriptor.value!;
   descriptor.value = async function (this: HasLogger, ...args: any[]) {
-    const call = `${key}(${args.map(String).join(", ")})`;
+    const call = `${key}(${args.map(show).join(", ")})`;
     const started = performance.now();
     const elapsed = () => Math.round(performance.now() - started);
     try {

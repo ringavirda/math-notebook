@@ -31,6 +31,6 @@ export class StorageError extends Error {
    */
   constructor(where: string, detail: string) {
     super(`Cannot read ${where}: ${detail}`);
-    this.name = "StorageError";
+    this.name = new.target.name;
   }
 }

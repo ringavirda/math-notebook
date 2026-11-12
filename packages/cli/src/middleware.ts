@@ -22,7 +22,10 @@ export type CommandStatus = "ok" | "empty" | "unknown" | "usage" | "failed";
 
 /** A command used wrongly: unknown word, too few or too many arguments. */
 export class UsageError extends Error {
-  override name = "UsageError";
+  constructor(message: string) {
+    super(message);
+    this.name = new.target.name;
+  }
 }
 
 /**
