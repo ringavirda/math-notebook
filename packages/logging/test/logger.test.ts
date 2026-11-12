@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { StderrLogger } from "../src/index.js";
 
 describe("StderrLogger", () => {
@@ -18,5 +18,15 @@ describe("StderrLogger", () => {
     logger.warn("no");
     logger.error("yes");
     expect(lines).toEqual(["[error] yes"]);
+  });
+
+  it("writes to stderr with a line break by default", () => {
+    const spy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    try {
+      new StderrLogger("warn").warn("x");
+      expect(spy).toHaveBeenCalledWith("[warn] x\n");
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

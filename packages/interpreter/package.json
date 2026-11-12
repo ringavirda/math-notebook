@@ -15,7 +15,7 @@
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit && tsc -p test",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "clean": "rimraf dist"
   },
   "devDependencies": {

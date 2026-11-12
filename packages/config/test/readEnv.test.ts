@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { ConfigError, readEnv } from "../src/index.js";
 
@@ -9,6 +9,10 @@ const schema = z.object({
 });
 
 describe("readEnv", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("applies defaults", () => {
     expect(readEnv(schema, {})).toEqual({ MODE: "fast", RETRIES: 3 });
   });
@@ -34,11 +38,7 @@ describe("readEnv", () => {
   });
 
   it("reads process.env by default", () => {
-    process.env.MODE = "slow";
-    try {
-      expect(readEnv(schema).MODE).toBe("slow");
-    } finally {
-      delete process.env.MODE;
-    }
+    vi.stubEnv("MODE", "slow");
+    expect(readEnv(schema).MODE).toBe("slow");
   });
 });

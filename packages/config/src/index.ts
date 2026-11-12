@@ -7,9 +7,10 @@ export class ConfigError extends Error {
 
 /**
  * Parses the environment with a schema whose keys are variable names. An empty value counts
- * as unset, so a schema default applies to it.
+ * as unset, so a schema default applies to it. A schema-level issue with no variable name gives
+ * a message starting with `: `.
  * @param schema describes the variables read; unknown variables are ignored.
- * @param env the environment to read.
+ * @param env the environment to read; defaults to `process.env`.
  * @returns the parsed settings.
  * @throws {ConfigError} `<VAR>: <message>` naming the first variable that holds a bad value.
  */
