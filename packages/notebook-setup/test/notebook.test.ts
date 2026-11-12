@@ -43,7 +43,7 @@ describe("addNotebook", () => {
       await host.services.get(NotebookService).run("main", "x = 2");
       return 0;
     });
-    expect(lines.some((line) => line.startsWith("[info] "))).toBe(true);
+    expect(lines).toContain("[info] [main] defined x: x = 2");
   });
 
   it("stops logging events after the host has stopped", async () => {

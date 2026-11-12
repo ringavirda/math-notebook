@@ -121,6 +121,10 @@ describe("api", () => {
     expect(changed.body.recomputed).toEqual([{ name: "subtotal", value: 100 }]);
   });
 
+  it("logs the notebook events at info", () => {
+    expect(stderr).toContain("[info] [main] defined price: price = 40");
+  });
+
   it("lists the notebooks and shows one", async () => {
     expect((await call("GET", "/notebooks")).body).toEqual({
       notebooks: ["main"],

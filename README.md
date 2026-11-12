@@ -11,7 +11,8 @@ around them, each in its own package.
 - `apps/cli` the app: `main.ts` builds the host, `services.ts` binds the command line, `commands.ts`
   holds the commands, `format.ts` the output.
 - `apps/api` the same libraries behind HTTP on `node:http`: `routes.ts` maps requests to the
-  notebook service, `server.ts` is the hosted service, `services.ts` binds it, `requests.http` holds the requests to send.
+  notebook service, `server.ts` is the hosted service, `services.ts` binds it,
+  `requests.http` holds the requests to send.
 - `packages/interpreter` lexer, parser, analyzer and evaluator of the language, with errors that
   carry the span of the input they come from.
 - `packages/notebook` the domain: notebooks, dependencies, the service, events and the repository
