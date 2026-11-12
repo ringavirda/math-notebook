@@ -81,6 +81,10 @@ the SQLite file with the CLI, so a value defined over HTTP is read by `pnpm --fi
 @mathbook/cli-app start 'price * 3'`.
 
     GET    /notebooks                                  names
+    POST   /notebooks                                  body {"name": "shop"}, 201
+    PATCH  /notebooks/:name                            body {"name": "store"}, renames
+    DELETE /notebooks/:name                            204, with its definitions and history
+    DELETE /notebooks/:name/history                    204
     GET    /notebooks/:name                            definitions with values
     POST   /notebooks/:name/run                        body {"line": "price = 40"}
     DELETE /notebooks/:name/definitions/:def           204
@@ -88,7 +92,7 @@ the SQLite file with the CLI, so a value defined over HTTP is read by `pnpm --fi
     GET    /notebooks/:name/history?limit=10&failed    evaluations, newest first
 
 Errors are JSON `{"error": {"stage", "message"}}`: 400 for a line that fails an interpreter stage
-(with its `span`) or a bad request, 404 for an unknown definition or route, 409 for a refused removal, 413 for a body over 64 KiB,
+(with its `span`) or a bad request, 404 for an unknown notebook, definition or route, 409 for a refused removal or a taken name, 400 with stage `domain` for an invalid notebook name, 413 for a body over 64 KiB,
 500 `Unexpected error` for anything else.
 
 ## MongoDB

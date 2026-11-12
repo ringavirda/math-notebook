@@ -229,6 +229,84 @@ describe("api", () => {
     expect(last.body.history[0].source).toBe("1 / 0");
   });
 
+  it("creates, renames, clears and drops a notebook", async () => {
+    const created = await call(
+      "POST",
+      "/notebooks",
+      JSON.stringify({ name: "shop" }),
+    );
+    expect(created.status).toBe(201);
+    expect(created.body).toEqual({ name: "shop" });
+    const again = await call(
+      "POST",
+      "/notebooks",
+      JSON.stringify({ name: "shop" }),
+    );
+    expect(again.status).toBe(409);
+    expect(again.body.error.stage).toBe("domain");
+    const invalid = await call(
+      "POST",
+      "/notebooks",
+      JSON.stringify({ name: "1x" }),
+    );
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.stage).toBe("domain");
+
+    await call(
+      "POST",
+      "/notebooks/shop/run",
+      JSON.stringify({ line: "a = 1" }),
+    );
+    const renamed = await call(
+      "PATCH",
+      "/notebooks/shop",
+      JSON.stringify({ name: "store" }),
+    );
+    expect(renamed.status).toBe(200);
+    expect(renamed.body).toEqual({ name: "store" });
+    expect((await call("GET", "/notebooks/shop")).status).toBe(404);
+    const taken = await call(
+      "PATCH",
+      "/notebooks/store",
+      JSON.stringify({ name: "main" }),
+    );
+    expect(taken.status).toBe(409);
+
+    const cleared = await call("DELETE", "/notebooks/store/history");
+    expect(cleared.status).toBe(204);
+    const history = await call("GET", "/notebooks/store/history");
+    expect(history.body.history).toEqual([]);
+    expect(
+      (await call("GET", "/notebooks/store")).body.definitions,
+    ).toHaveLength(1);
+
+    expect((await call("DELETE", "/notebooks/store")).status).toBe(204);
+    expect((await call("GET", "/notebooks")).body).toEqual({
+      notebooks: ["main"],
+    });
+    expect((await call("DELETE", "/notebooks/store")).status).toBe(404);
+  });
+
+  it("answers 404 on a missing notebook for every route and creates nothing", async () => {
+    for (const [method, path, body] of [
+      ["GET", "/notebooks/nope", undefined],
+      ["POST", "/notebooks/nope/run", JSON.stringify({ line: "1" })],
+      ["DELETE", "/notebooks/nope/definitions/x", undefined],
+      ["GET", "/notebooks/nope/dependencies/x", undefined],
+      ["GET", "/notebooks/nope/history", undefined],
+      ["DELETE", "/notebooks/nope/history", undefined],
+      ["PATCH", "/notebooks/nope", JSON.stringify({ name: "other" })],
+      ["DELETE", "/notebooks/nope", undefined],
+    ] as const) {
+      const answer = await call(method, path, body);
+      expect([method, path, answer.status]).toEqual([method, path, 404]);
+      expect(answer.body.error.stage).toBe("domain");
+    }
+    expect((await call("GET", "/notebooks")).body).toEqual({
+      notebooks: ["main"],
+    });
+  });
+
   it("answers an unknown route or method with 404", async () => {
     for (const [method, path] of [
       ["GET", "/nope"],

@@ -1,5 +1,13 @@
 @host = http://localhost:3000
 
+### Create the notebook
+POST {{host}}/notebooks
+Content-Type: application/json
+
+{
+    "name": "main"
+}
+
 ### List the notebooks
 GET {{host}}/notebooks
 
@@ -94,3 +102,17 @@ DELETE {{host}}/notebooks/main/definitions/price
 
 ### The failed evaluations
 GET {{host}}/notebooks/main/history?limit=10&failed
+
+### Rename the notebook
+PATCH {{host}}/notebooks/main
+Content-Type: application/json
+
+{
+    "name": "shop"
+}
+
+### Clear its history
+DELETE {{host}}/notebooks/shop/history
+
+### Drop it
+DELETE {{host}}/notebooks/shop

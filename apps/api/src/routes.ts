@@ -1,6 +1,7 @@
 import { MathError } from "@mathbook/interpreter";
 import {
   DomainError,
+  InvalidNameError,
   NotFoundError,
   type NotebookService,
 } from "@mathbook/notebook";
@@ -28,18 +29,18 @@ const requestError = (message: string): Reply => ({
   body: { error: { stage: "request", message } },
 });
 
-function parseLine(body: string): string {
+function parseString(body: string, key: string): string {
   let parsed: unknown;
   try {
     parsed = JSON.parse(body);
   } catch {
     throw new RequestError("Body is not valid JSON");
   }
-  const line = (parsed as { line?: unknown } | null)?.line;
-  if (typeof line !== "string") {
-    throw new RequestError('Body needs a string "line"');
+  const value = (parsed as Record<string, unknown> | null)?.[key];
+  if (typeof value !== "string") {
+    throw new RequestError(`Body needs a string "${key}"`);
   }
-  return line;
+  return value;
 }
 
 function parseFailed(value: string | null): boolean {
@@ -72,10 +73,24 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
   if (root !== "notebooks" || parts.includes("")) return notFound;
 
   if (name === undefined) {
+    if (call.method === "POST") {
+      const created = parseString(call.body, "name");
+      await service.create(created);
+      return { status: 201, body: { name: created } };
+    }
     if (call.method !== "GET") return notFound;
     return { status: 200, body: { notebooks: await service.list() } };
   }
   if (section === undefined) {
+    if (call.method === "DELETE") {
+      await service.drop(name);
+      return { status: 204 };
+    }
+    if (call.method === "PATCH") {
+      const renamed = parseString(call.body, "name");
+      await service.rename(name, renamed);
+      return { status: 200, body: { name: renamed } };
+    }
     if (call.method !== "GET") return notFound;
     return {
       status: 200,
@@ -83,7 +98,10 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
     };
   }
   if (section === "run" && item === undefined && call.method === "POST") {
-    return { status: 200, body: await service.run(name, parseLine(call.body)) };
+    return {
+      status: 200,
+      body: await service.run(name, parseString(call.body, "line")),
+    };
   }
   if (section === "definitions" && item !== undefined && parts.length === 4) {
     if (call.method !== "DELETE") return notFound;
@@ -93,6 +111,10 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
   if (section === "dependencies" && item !== undefined && parts.length === 4) {
     if (call.method !== "GET") return notFound;
     return { status: 200, body: await service.dependencies(name, item) };
+  }
+  if (section === "history" && item === undefined && call.method === "DELETE") {
+    await service.clearHistory(name);
+    return { status: 204 };
   }
   if (section === "history" && item === undefined && call.method === "GET") {
     const history = await service.history(name, {
@@ -107,11 +129,13 @@ async function dispatch(service: NotebookService, call: Call): Promise<Reply> {
 /**
  * Answers one request from the notebook service.
  *
- * Routes: `GET /notebooks`, `GET /notebooks/:name`, `POST /notebooks/:name/run` with
- * `{ "line" }`, `DELETE /notebooks/:name/definitions/:def`,
- * `GET /notebooks/:name/dependencies/:def`, `GET /notebooks/:name/history?limit=10&failed` (`failed=true` also counts).
- * A `MathError` answers 400, a `NotFoundError` 404, any other `DomainError` 409, a bad request
- * 400 with stage `request`, an unknown route 404.
+ * Routes: `GET /notebooks`, `POST /notebooks` with `{ "name" }` (201), `GET /notebooks/:name`,
+ * `PATCH /notebooks/:name` with `{ "name" }`, `DELETE /notebooks/:name` (204),
+ * `POST /notebooks/:name/run` with `{ "line" }`, `DELETE /notebooks/:name/definitions/:def`,
+ * `GET /notebooks/:name/dependencies/:def`, `GET /notebooks/:name/history?limit=10&failed` (`failed=true` also counts),
+ * `DELETE /notebooks/:name/history` (204). No route creates a notebook but `POST /notebooks`.
+ * A `MathError` answers 400, an `InvalidNameError` 400 with stage `domain`, a `NotFoundError` 404,
+ * any other `DomainError` 409, a bad request 400 with stage `request`, an unknown route 404.
  * @param service the notebook use cases.
  * @param call the request as read from the wire.
  * @param onUnexpected called with any other error, which answers 500 `Unexpected error`.
@@ -141,7 +165,12 @@ export async function handle(
     }
     if (error instanceof DomainError) {
       return {
-        status: error instanceof NotFoundError ? 404 : 409,
+        status:
+          error instanceof NotFoundError
+            ? 404
+            : error instanceof InvalidNameError
+              ? 400
+              : 409,
         body: { error: { stage: "domain", message: error.message } },
       };
     }

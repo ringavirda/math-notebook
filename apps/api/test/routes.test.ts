@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { StorageError, type NotebookService } from "@mathbook/notebook";
+import {
+  DuplicateError,
+  InvalidNameError,
+  NotFoundError,
+  StorageError,
+  type NotebookService,
+} from "@mathbook/notebook";
 import { handle } from "../src/routes.js";
 
 describe("handle", () => {
@@ -65,5 +71,69 @@ describe("handle", () => {
       expect(reply.body).toMatchObject({ error: { stage: "request" } });
     }
     expect(history).not.toHaveBeenCalled();
+  });
+
+  it("maps each lifecycle route to its service method and status", async () => {
+    const service = {
+      create: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      drop: vi.fn(async () => {}),
+      clearHistory: vi.fn(async () => 2),
+    } as unknown as NotebookService;
+    const ask = (method: string, url: string, body = "") =>
+      handle(service, { method, url, body }, vi.fn());
+    expect(await ask("POST", "/notebooks", '{"name":"shop"}')).toEqual({
+      status: 201,
+      body: { name: "shop" },
+    });
+    expect(service.create).toHaveBeenCalledWith("shop");
+    expect(await ask("PATCH", "/notebooks/shop", '{"name":"store"}')).toEqual({
+      status: 200,
+      body: { name: "store" },
+    });
+    expect(service.rename).toHaveBeenCalledWith("shop", "store");
+    expect(await ask("DELETE", "/notebooks/store/history")).toEqual({
+      status: 204,
+    });
+    expect(service.clearHistory).toHaveBeenCalledWith("store");
+    expect(await ask("DELETE", "/notebooks/store")).toEqual({ status: 204 });
+    expect(service.drop).toHaveBeenCalledWith("store");
+  });
+
+  it("refuses a lifecycle body without a string name before calling the service", async () => {
+    const create = vi.fn();
+    const rename = vi.fn();
+    const service = { create, rename } as unknown as NotebookService;
+    for (const [method, url] of [
+      ["POST", "/notebooks"],
+      ["PATCH", "/notebooks/main"],
+    ]) {
+      for (const body of ["{", "{}", '{"name":1}']) {
+        const reply = await handle(service, { method, url, body }, vi.fn());
+        expect(reply.status).toBe(400);
+        expect(reply.body).toMatchObject({ error: { stage: "request" } });
+      }
+    }
+    expect(create).not.toHaveBeenCalled();
+    expect(rename).not.toHaveBeenCalled();
+  });
+
+  it("answers 400 for an invalid name, 409 for a taken one and 404 for a missing notebook", async () => {
+    const service = {
+      create: async () => {
+        throw new InvalidNameError("Invalid notebook name '1x'");
+      },
+      rename: async () => {
+        throw new DuplicateError("Notebook 'b' already exists");
+      },
+      drop: async () => {
+        throw new NotFoundError("No notebook 'nope'");
+      },
+    } as unknown as NotebookService;
+    const status = async (method: string, url: string, body: string) =>
+      (await handle(service, { method, url, body }, vi.fn())).status;
+    expect(await status("POST", "/notebooks", '{"name":"1x"}')).toBe(400);
+    expect(await status("PATCH", "/notebooks/a", '{"name":"b"}')).toBe(409);
+    expect(await status("DELETE", "/notebooks/nope", "")).toBe(404);
   });
 });
