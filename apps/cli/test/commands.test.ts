@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { StorageError } from "@mathbook/notebook";
+import { describe, expect, it, vi } from "vitest";
 import { createHarness } from "./harness.js";
 
 async function session(lines: string[], notebook?: string) {
@@ -39,6 +40,17 @@ describe("lines", () => {
       "Err: Syntax error: Unexpected '*'",
       "Err: 1 + * 2",
       "Err:     ^",
+    ]);
+  });
+
+  it("prints a storage error as its message and is failed", async () => {
+    const harness = createHarness();
+    vi.spyOn(harness.repository, "load").mockRejectedValue(
+      new StorageError("notebook main", "bad row"),
+    );
+    expect(await harness.executor.execute("1 + 2")).toBe("failed");
+    expect(harness.stderr()).toEqual([
+      "Err: Cannot read notebook main: bad row",
     ]);
   });
 

@@ -99,6 +99,20 @@ describe.each(["sqlite", "mongo"] as const)("%s storage", (storage) => {
   );
 
   it(
+    "logs notebook events on stderr at info level",
+    async () => {
+      const result = await run(
+        [],
+        { ...(await setup()), LOG_LEVEL: "info" },
+        "x = 7\n",
+      );
+      expect(result.code).toBe(0);
+      expect(result.stderr).toContain("[info] [main] defined x: x = 7");
+    },
+    timeout,
+  );
+
+  it(
     "an unknown command exits 2",
     async () => {
       const result = await run([":nope"], await setup());
