@@ -11,11 +11,17 @@ export class DomainError extends Error {
   }
 }
 
-/** A name the notebook does not define. */
+/** A name the notebook does not define, or a notebook that does not exist. */
 export class NotFoundError extends DomainError {}
 
 /** A change refused because other definitions use the one being changed. */
 export class DependencyError extends DomainError {}
+
+/** A notebook name that is already taken. */
+export class DuplicateError extends DomainError {}
+
+/** A notebook name that does not match `^[A-Za-z_][A-Za-z0-9_-]*$`. */
+export class InvalidNameError extends DomainError {}
 
 /** Stored notebook data that cannot be read or is invalid. */
 export class StorageError extends Error {

@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   DependencyError,
   describeEvent,
+  DuplicateError,
+  InvalidNameError,
+  NotFoundError,
   Notebook,
   NotebookService,
   type NotebookEvent,
@@ -25,9 +28,15 @@ function setup(
   return { service, published, lines, repository };
 }
 
+async function ready() {
+  const made = setup();
+  await made.repository.create("main");
+  return made;
+}
+
 describe("NotebookService with the memory repository", () => {
   it("publishes defined then recomputed, in order", async () => {
-    const { service, published } = setup();
+    const { service, published } = await ready();
     await service.run("main", "price = 40");
     await service.run("main", "subtotal = price * 2");
     published.length = 0;
@@ -44,7 +53,7 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("publishes evaluated for an expression", async () => {
-    const { service, published } = setup();
+    const { service, published } = await ready();
     await service.run("main", "2 * 3");
     expect(published).toEqual([
       { type: "evaluated", notebook: "main", source: "2 * 3", value: 6 },
@@ -52,16 +61,17 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("keeps notebooks apart and saves definitions", async () => {
-    const { service } = setup();
+    const { service } = await ready();
     await service.run("main", "a = 1");
+    await service.create("other");
     await service.run("other", "b = 2");
     expect(await service.list()).toEqual(["main", "other"]);
     expect((await service.show("main")).map((d) => d.name)).toEqual(["a"]);
-    expect(await service.show("none")).toEqual([]);
+    expect((await service.show("other")).map((d) => d.name)).toEqual(["b"]);
   });
 
   it("records successes and failures with the stage, newest first", async () => {
-    const { service } = setup();
+    const { service } = await ready();
     await service.run("main", "x = 1");
     await service.run("main", "x + 1");
     await expect(service.run("main", "1 / 0")).rejects.toThrow();
@@ -90,7 +100,7 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("stores and publishes a failed line trimmed", async () => {
-    const { service, published } = setup();
+    const { service, published } = await ready();
     await expect(service.run("main", "  1 / 0  ")).rejects.toThrow();
     const [record] = await service.history("main", {
       limit: 1,
@@ -101,7 +111,7 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("records a refused define as a domain failure and publishes failed", async () => {
-    const { service, published } = setup();
+    const { service, published } = await ready();
     await service.run("main", "x = 1");
     await service.run("main", "y = 1 / x");
     published.length = 0;
@@ -117,7 +127,7 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("records a refused remove nowhere and keeps the definition", async () => {
-    const { service, published } = setup();
+    const { service, published } = await ready();
     await service.run("main", "x = 1");
     await service.run("main", "y = x");
     published.length = 0;
@@ -131,7 +141,7 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("reports what a name uses and what uses it", async () => {
-    const { service } = setup();
+    const { service } = await ready();
     await service.run("main", "a = 1");
     await service.run("main", "b = a");
     await service.run("main", "c = b");
@@ -142,7 +152,7 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("rethrows an unexpected error without recording it", async () => {
-    const { service, published } = setup();
+    const { service, published } = await ready();
     const boom = new Error("disk");
     vi.spyOn(Notebook.prototype, "run").mockImplementationOnce(() => {
       throw boom;
@@ -155,9 +165,128 @@ describe("NotebookService with the memory repository", () => {
   });
 
   it("logs each call at debug", async () => {
-    const { service, lines } = setup();
+    const { service, lines } = await ready();
     await service.run("main", "1 + 1");
     expect(lines[0]).toMatch(/^\[debug\] run\(main, 1 \+ 1\) took \d+ ms$/);
+  });
+
+  it("refuses every method for a missing notebook and records nothing", async () => {
+    const { service, published, repository } = await ready();
+    const missing = "No notebook 'ghost'";
+    const query = { limit: 5, failedOnly: false };
+    for (const call of [
+      () => service.run("ghost", "1 + 1"),
+      () => service.remove("ghost", "x"),
+      () => service.show("ghost"),
+      () => service.dependencies("ghost", "x"),
+      () => service.history("ghost", query),
+      () => service.drop("ghost"),
+      () => service.rename("ghost", "fresh"),
+      () => service.clearHistory("ghost"),
+    ]) {
+      const failure = await call().catch((error) => error);
+      expect(failure).toBeInstanceOf(NotFoundError);
+      expect(failure.message).toBe(missing);
+    }
+    expect(published).toEqual([]);
+    expect(await repository.names()).toEqual(["main"]);
+    expect(await repository.history("ghost", query)).toEqual([]);
+  });
+
+  it("creates a notebook and publishes created", async () => {
+    const { service, published } = await ready();
+    await service.create("work_2-b");
+    expect(await service.list()).toEqual(["main", "work_2-b"]);
+    expect(await service.show("work_2-b")).toEqual([]);
+    expect(published).toEqual([{ type: "created", notebook: "work_2-b" }]);
+  });
+
+  it.each(["1x", "a b", "", "-a", "a.b"])(
+    "refuses the name '%s'",
+    async (name) => {
+      const { service, published } = await ready();
+      await expect(service.create(name)).rejects.toThrow(InvalidNameError);
+      await expect(service.ensure(name)).rejects.toThrow(InvalidNameError);
+      await service.run("main", "x = 1");
+      await expect(service.rename("main", name)).rejects.toThrow(
+        InvalidNameError,
+      );
+      expect(await service.list()).toEqual(["main"]);
+      expect(published).toHaveLength(1);
+    },
+  );
+
+  it("refuses to create a taken name", async () => {
+    const { service, published } = await ready();
+    await expect(service.create("main")).rejects.toThrow(DuplicateError);
+    expect(published).toEqual([]);
+  });
+
+  it("ensures a notebook without an event when it exists", async () => {
+    const { service, published } = await ready();
+    await service.ensure("main");
+    expect(published).toEqual([]);
+    await service.ensure("fresh");
+    expect(await service.list()).toEqual(["fresh", "main"]);
+    expect(published).toEqual([{ type: "created", notebook: "fresh" }]);
+  });
+
+  it("drops a notebook and leaves the others", async () => {
+    const { service, published } = await ready();
+    await service.create("other");
+    await service.run("main", "x = 1");
+    await service.run("other", "y = 2");
+    published.length = 0;
+    await service.drop("main");
+    expect(published).toEqual([{ type: "dropped", notebook: "main" }]);
+    expect(await service.list()).toEqual(["other"]);
+    expect((await service.show("other")).map((d) => d.name)).toEqual(["y"]);
+    await expect(service.show("main")).rejects.toThrow(NotFoundError);
+  });
+
+  it("renames a notebook and keeps its history", async () => {
+    const { service, published } = await ready();
+    await service.run("main", "x = 1");
+    published.length = 0;
+    await service.rename("main", "work");
+    expect(published).toEqual([
+      { type: "renamed", notebook: "main", to: "work" },
+    ]);
+    expect(await service.list()).toEqual(["work"]);
+    expect((await service.show("work")).map((d) => d.name)).toEqual(["x"]);
+    const history = await service.history("work", {
+      limit: 5,
+      failedOnly: false,
+    });
+    expect(history.map((r) => r.source)).toEqual(["x = 1"]);
+  });
+
+  it("refuses to rename onto a taken name", async () => {
+    const { service, published } = await ready();
+    await service.create("other");
+    published.length = 0;
+    await expect(service.rename("main", "other")).rejects.toThrow(
+      DuplicateError,
+    );
+    await expect(service.rename("main", "main")).rejects.toThrow(
+      DuplicateError,
+    );
+    expect(published).toEqual([]);
+  });
+
+  it("clears the history and keeps the definitions", async () => {
+    const { service, published } = await ready();
+    await service.run("main", "x = 1");
+    await service.run("main", "x + 1");
+    published.length = 0;
+    expect(await service.clearHistory("main")).toBe(2);
+    expect(published).toEqual([
+      { type: "historyCleared", notebook: "main", count: 2 },
+    ]);
+    expect(
+      await service.history("main", { limit: 5, failedOnly: false }),
+    ).toEqual([]);
+    expect((await service.show("main")).map((d) => d.name)).toEqual(["x"]);
   });
 });
 
@@ -168,6 +297,10 @@ describe("NotebookService with a mock repository", () => {
       close: vi.fn(),
       names: vi.fn(async () => []),
       load: vi.fn(async (name: string) => new Notebook(name)),
+      create: vi.fn(async () => {}),
+      drop: vi.fn(async () => {}),
+      rename: vi.fn(async () => {}),
+      clearHistory: vi.fn(async () => 0),
       save: vi.fn(async () => {}),
       appendEvaluation: vi.fn(async () => {}),
       history: vi.fn(async () => []),
@@ -249,5 +382,17 @@ describe("describeEvent", () => {
         value: 2,
       }),
     ).toBe("[m] evaluated 1 + 1 = 2");
+    expect(describeEvent({ type: "created", notebook: "m" })).toBe(
+      "[m] created",
+    );
+    expect(describeEvent({ type: "dropped", notebook: "m" })).toBe(
+      "[m] dropped",
+    );
+    expect(describeEvent({ type: "renamed", notebook: "m", to: "n" })).toBe(
+      "[m] renamed to n",
+    );
+    expect(
+      describeEvent({ type: "historyCleared", notebook: "m", count: 3 }),
+    ).toBe("[m] cleared 3 history records");
   });
 });

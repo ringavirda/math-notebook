@@ -1,6 +1,8 @@
 export {
   DependencyError,
   DomainError,
+  DuplicateError,
+  InvalidNameError,
   NotFoundError,
   StorageError,
 } from "./model/errors.js";

@@ -25,6 +25,11 @@ export class MathCommands {
     this.notebook = config.MATHBOOK_NOTEBOOK;
   }
 
+  /** Creates the notebook the session starts in when it does not exist. */
+  async start(): Promise<void> {
+    await this.service.ensure(this.notebook);
+  }
+
   /** Runs a definition or an expression in the current notebook and prints the result. */
   async evaluate(line: string): Promise<void> {
     const result = await this.service.run(this.notebook, line);
@@ -67,7 +72,8 @@ export class MathCommands {
         selectors: [":use"],
         params: ["name"],
         description: "Switch notebook; it is created on first save.",
-        action: (name: string) => {
+        action: async (name: string) => {
+          await this.service.ensure(name);
           this.notebook = name;
           this.cli.echo(`Using notebook ${name}`);
         },

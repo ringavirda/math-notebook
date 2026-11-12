@@ -1,6 +1,8 @@
 import type { Logger } from "@mathbook/common";
 import {
+  DuplicateError,
   Notebook,
+  NotFoundError,
   StorageError,
   type EvaluationRecord,
 } from "@mathbook/notebook";
@@ -79,6 +81,7 @@ beforeEach(async () => {
   lines = [];
   repository = new MongoNotebookRepository(url, logger);
   await repository.open();
+  await repository.create("main");
 });
 
 afterEach(async () => {
@@ -86,15 +89,17 @@ afterEach(async () => {
 });
 
 describe("MongoNotebookRepository", () => {
-  it("loads an empty notebook for an unknown name", async () => {
-    const notebook = await repository.load("fresh");
+  it("loads undefined for an unknown name and an empty notebook for a created one", async () => {
+    expect(await repository.load("fresh")).toBeUndefined();
+    await repository.create("fresh");
+    const notebook = (await repository.load("fresh"))!;
     expect(notebook.name).toBe("fresh");
     expect(notebook.definitions()).toEqual([]);
   });
 
   it("saves a notebook and loads it back with its values", async () => {
     await repository.save(priced());
-    const loaded = await repository.load("main");
+    const loaded = (await repository.load("main"))!;
     expect(loaded.sources()).toEqual(priced().sources());
     expect(loaded.run("total(3)")).toEqual({
       kind: "expression",
@@ -127,23 +132,96 @@ describe("MongoNotebookRepository", () => {
     const smaller = new Notebook("main");
     smaller.run("x = 1");
     await repository.save(smaller);
-    expect((await repository.load("main")).sources()).toEqual(["x = 1"]);
+    expect((await repository.load("main"))?.sources()).toEqual(["x = 1"]);
     expect(await repository.names()).toEqual(["main"]);
   });
 
-  it("lists notebook names in order", async () => {
-    await repository.save(new Notebook("beta"));
-    await repository.save(new Notebook("alpha"));
-    expect(await repository.names()).toEqual(["alpha", "beta"]);
+  it("lists every notebook sorted, saved or not", async () => {
+    await repository.create("beta");
+    await repository.create("alpha");
+    expect(await repository.names()).toEqual(["alpha", "beta", "main"]);
+  });
+
+  it("refuses a taken name on create", async () => {
+    await expect(repository.create("main")).rejects.toThrow(DuplicateError);
+  });
+
+  it("refuses to save or append to a notebook that does not exist", async () => {
+    await expect(repository.save(new Notebook("ghost"))).rejects.toThrow(
+      StorageError,
+    );
+    await expect(
+      repository.appendEvaluation(record("1", 1, { notebook: "ghost" })),
+    ).rejects.toThrow(StorageError);
+    expect(await repository.names()).toEqual(["main"]);
+  });
+
+  it("drops a notebook with its history and leaves the others", async () => {
+    await repository.create("other");
+    await repository.save(priced());
+    await repository.appendEvaluation(record("1", 1));
+    await repository.appendEvaluation(record("2", 2, { notebook: "other" }));
+    await repository.drop("main");
+    expect(await repository.names()).toEqual(["other"]);
+    expect(await repository.load("main")).toBeUndefined();
+    const left = await raw((client) =>
+      client.db().collection("evaluations").find().toArray(),
+    );
+    expect(left.map((d) => d.notebook)).toEqual(["other"]);
+    await expect(repository.drop("main")).rejects.toThrow(NotFoundError);
+  });
+
+  it("renames a notebook and keeps its definitions and history", async () => {
+    await repository.save(priced());
+    await repository.appendEvaluation(record("1", 1));
+    await repository.rename("main", "costs");
+    expect(await repository.load("main")).toBeUndefined();
+    expect((await repository.load("costs"))?.sources()).toEqual(
+      priced().sources(),
+    );
+    const found = await repository.history("costs", {
+      limit: 10,
+      failedOnly: false,
+    });
+    expect(found.map((r) => [r.notebook, r.source])).toEqual([["costs", "1"]]);
+  });
+
+  it("refuses to rename a missing notebook or onto a taken name", async () => {
+    await repository.create("other");
+    await expect(repository.rename("main", "other")).rejects.toThrow(
+      DuplicateError,
+    );
+    await expect(repository.rename("ghost", "new")).rejects.toThrow(
+      NotFoundError,
+    );
+    expect(await repository.names()).toEqual(["main", "other"]);
+  });
+
+  it("clears the history of one notebook and counts the records", async () => {
+    await repository.create("other");
+    await repository.save(priced());
+    await repository.appendEvaluation(record("1", 1));
+    await repository.appendEvaluation(record("2", 2));
+    await repository.appendEvaluation(record("3", 3, { notebook: "other" }));
+    expect(await repository.clearHistory("main")).toBe(2);
+    expect(await repository.clearHistory("main")).toBe(0);
+    const query = { limit: 10, failedOnly: false };
+    expect(await repository.history("main", query)).toEqual([]);
+    expect(await repository.history("other", query)).toHaveLength(1);
+    expect((await repository.load("main"))?.sources()).toHaveLength(3);
+    await expect(repository.clearHistory("ghost")).rejects.toThrow(
+      NotFoundError,
+    );
   });
 
   it("keeps notebooks apart", async () => {
     await repository.save(priced());
+    await repository.create("other");
     const other = new Notebook("other");
     other.run("y = 2");
     await repository.save(other);
-    expect((await repository.load("other")).sources()).toEqual(["y = 2"]);
-    expect((await repository.load("main")).sources()).toHaveLength(3);
+    expect((await repository.load("other"))?.sources()).toEqual(["y = 2"]);
+    expect((await repository.load("main"))?.sources()).toHaveLength(3);
   });
 
   it("returns history newest first and limited", async () => {
@@ -158,6 +236,7 @@ describe("MongoNotebookRepository", () => {
   });
 
   it("keeps the records of other notebooks out of history", async () => {
+    await repository.create("other");
     await repository.appendEvaluation(record("1", 1));
     await repository.appendEvaluation(record("2", 2, { notebook: "other" }));
     const found = await repository.history("main", {
@@ -248,7 +327,7 @@ describe("MongoNotebookRepository", () => {
     url = server.getUri();
     const bare = new MongoNotebookRepository(url, logger);
     await bare.open();
-    await bare.save(new Notebook("main"));
+    await bare.create("main");
     await bare.close();
     const count = await raw((client) =>
       client.db("mathbook").collection("notebooks").countDocuments(),
@@ -309,7 +388,7 @@ describe("MongoNotebookRepository", () => {
     );
     await multi.open();
     try {
-      await multi.save(new Notebook("main"));
+      await multi.create("main");
       const names = await raw((client) =>
         client.db("multi-host").collection("notebooks").distinct("name"),
       );

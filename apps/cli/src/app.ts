@@ -5,6 +5,7 @@ import {
   runOnce,
   type ExitCode,
 } from "@mathbook/cli";
+import { MathCommands } from "./commands.js";
 import type { Host } from "@mathbook/hosting";
 
 /**
@@ -16,6 +17,7 @@ export async function runApp(host: Host): Promise<ExitCode> {
   const cli = host.services.get(CLI);
   const executor = host.services.get(Executor);
   try {
+    await host.services.get(MathCommands).start();
     if (host.argv.length > 0) return await runOnce(executor, host.argv);
     await runInteractive(cli, executor, {
       banner: [

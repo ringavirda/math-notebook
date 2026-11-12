@@ -4,6 +4,7 @@ import { createHarness } from "./harness.js";
 
 async function session(lines: string[], notebook?: string) {
   const harness = createHarness(notebook);
+  await harness.ready;
   const statuses: string[] = [];
   for (const line of lines) statuses.push(await harness.executor.execute(line));
   return { ...harness, statuses };
@@ -45,6 +46,7 @@ describe("lines", () => {
 
   it("prints a storage error as its message and is failed", async () => {
     const harness = createHarness();
+    await harness.ready;
     vi.spyOn(harness.repository, "load").mockRejectedValue(
       new StorageError("notebook main", "bad row"),
     );

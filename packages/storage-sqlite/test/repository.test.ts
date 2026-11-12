@@ -1,6 +1,8 @@
 import { StderrLogger } from "@mathbook/hosting";
 import {
+  DuplicateError,
   Notebook,
+  NotFoundError,
   StorageError,
   type EvaluationRecord,
 } from "@mathbook/notebook";
@@ -20,6 +22,7 @@ async function memoryRepository(): Promise<SqliteNotebookRepository> {
   const repository = new SqliteNotebookRepository(":memory:", logger);
   await repository.open();
   open.push(repository);
+  await repository.create("prices");
   return repository;
 }
 
@@ -64,7 +67,7 @@ describe("SqliteNotebookRepository", () => {
   it("round-trips a notebook", async () => {
     const repository = await memoryRepository();
     await repository.save(priceNotebook("prices"));
-    const loaded = await repository.load("prices");
+    const loaded = (await repository.load("prices"))!;
     expect(loaded.sources()).toEqual(priceNotebook("prices").sources());
     expect(loaded.run("total(3)")).toMatchObject({ value: 144 });
     expect(loaded.definitions().find((d) => d.name === "subtotal")?.value).toBe(
@@ -72,9 +75,11 @@ describe("SqliteNotebookRepository", () => {
     );
   });
 
-  it("returns an empty notebook for an unknown name", async () => {
+  it("returns undefined for an unknown name and an empty notebook for a created one", async () => {
     const repository = await memoryRepository();
-    expect((await repository.load("nothing")).definitions()).toEqual([]);
+    expect(await repository.load("nothing")).toBeUndefined();
+    await repository.create("fresh");
+    expect((await repository.load("fresh"))?.definitions()).toEqual([]);
   });
 
   it("keeps two notebooks apart", async () => {
@@ -82,14 +87,15 @@ describe("SqliteNotebookRepository", () => {
     await repository.save(priceNotebook("prices"));
     const other = new Notebook("other");
     other.run("x = 1");
+    await repository.create("other");
     await repository.save(other);
-    expect((await repository.load("prices")).sources()).toEqual(
+    expect((await repository.load("prices"))?.sources()).toEqual(
       priceNotebook("prices").sources(),
     );
     await repository.appendEvaluation(record("1 + 1", 0));
     await repository.appendEvaluation(record("2 + 2", 1, null, "other"));
-    expect(await repository.names()).toEqual(["prices", "other"]);
-    expect((await repository.load("other")).sources()).toEqual(["x = 1"]);
+    expect(await repository.names()).toEqual(["other", "prices"]);
+    expect((await repository.load("other"))?.sources()).toEqual(["x = 1"]);
     expect(
       (
         await repository.history("prices", { limit: 10, failedOnly: false })
@@ -97,12 +103,108 @@ describe("SqliteNotebookRepository", () => {
     ).toEqual(["1 + 1"]);
   });
 
-  it("lists only saved notebooks", async () => {
+  it("lists every notebook sorted, saved or not", async () => {
     const repository = await memoryRepository();
-    await repository.appendEvaluation(record("1 + 1", 0, null, "scratch"));
-    expect(await repository.names()).toEqual([]);
-    await repository.save(new Notebook("empty"));
-    expect(await repository.names()).toEqual(["empty"]);
+    await repository.create("beta");
+    await repository.create("alpha");
+    await repository.save(new Notebook("beta"));
+    expect(await repository.names()).toEqual(["alpha", "beta", "prices"]);
+  });
+
+  it("refuses a taken name on create", async () => {
+    const repository = await memoryRepository();
+    await expect(repository.create("prices")).rejects.toThrow(DuplicateError);
+  });
+
+  it("refuses to save or append to a notebook that does not exist", async () => {
+    const repository = await memoryRepository();
+    await expect(repository.save(new Notebook("ghost"))).rejects.toThrow(
+      StorageError,
+    );
+    await expect(
+      repository.appendEvaluation(record("1", 0, null, "ghost")),
+    ).rejects.toThrow(StorageError);
+    expect(await repository.names()).toEqual(["prices"]);
+  });
+
+  it("drops a notebook with its rows and leaves the others", async () => {
+    const folder = await mkdtemp(join(tmpdir(), "mathbook-"));
+    folders.push(folder);
+    const path = join(folder, "notebook.db");
+    const repository = new SqliteNotebookRepository(path, logger);
+    await repository.open();
+    open.push(repository);
+    for (const name of ["prices", "other"]) {
+      await repository.create(name);
+      await repository.save(priceNotebook(name));
+      await repository.appendEvaluation(record("1 + 1", 0, null, name));
+    }
+    await repository.drop("prices");
+    expect(await repository.names()).toEqual(["other"]);
+    expect(await repository.load("prices")).toBeUndefined();
+    const raw = new Database(path);
+    const count = (table: string) =>
+      (
+        raw.prepare(`SELECT count(*) AS n FROM ${table}`).get() as {
+          n: number;
+        }
+      ).n;
+    expect(count("definitions")).toBe(4);
+    expect(count("dependencies")).toBe(3);
+    expect(count("evaluations")).toBe(1);
+    raw.close();
+    expect(
+      await repository.history("other", { limit: 10, failedOnly: false }),
+    ).toHaveLength(1);
+    await expect(repository.drop("prices")).rejects.toThrow(NotFoundError);
+  });
+
+  it("renames a notebook and keeps its definitions and history", async () => {
+    const repository = await memoryRepository();
+    await repository.save(priceNotebook("prices"));
+    await repository.appendEvaluation(record("1 + 1", 0));
+    await repository.rename("prices", "costs");
+    expect(await repository.load("prices")).toBeUndefined();
+    expect((await repository.load("costs"))?.sources()).toEqual(
+      priceNotebook("costs").sources(),
+    );
+    const history = await repository.history("costs", {
+      limit: 10,
+      failedOnly: false,
+    });
+    expect(history.map((r) => [r.notebook, r.source])).toEqual([
+      ["costs", "1 + 1"],
+    ]);
+  });
+
+  it("refuses to rename a missing notebook or onto a taken name", async () => {
+    const repository = await memoryRepository();
+    await repository.create("other");
+    await expect(repository.rename("prices", "other")).rejects.toThrow(
+      DuplicateError,
+    );
+    await expect(repository.rename("ghost", "new")).rejects.toThrow(
+      NotFoundError,
+    );
+    expect(await repository.names()).toEqual(["other", "prices"]);
+  });
+
+  it("clears the history of one notebook and counts the records", async () => {
+    const repository = await memoryRepository();
+    await repository.create("other");
+    await repository.save(priceNotebook("prices"));
+    await repository.appendEvaluation(record("a", 0));
+    await repository.appendEvaluation(record("b", 1));
+    await repository.appendEvaluation(record("c", 2, null, "other"));
+    expect(await repository.clearHistory("prices")).toBe(2);
+    expect(await repository.clearHistory("prices")).toBe(0);
+    const query = { limit: 10, failedOnly: false };
+    expect(await repository.history("prices", query)).toEqual([]);
+    expect(await repository.history("other", query)).toHaveLength(1);
+    expect((await repository.load("prices"))?.sources()).toHaveLength(4);
+    await expect(repository.clearHistory("ghost")).rejects.toThrow(
+      NotFoundError,
+    );
   });
 
   it("replaces the stored definitions on save", async () => {
@@ -111,7 +213,9 @@ describe("SqliteNotebookRepository", () => {
     const smaller = new Notebook("prices");
     smaller.run("rate = 0.5");
     await repository.save(smaller);
-    expect((await repository.load("prices")).sources()).toEqual(["rate = 0.5"]);
+    expect((await repository.load("prices"))?.sources()).toEqual([
+      "rate = 0.5",
+    ]);
   });
 
   it("returns history newest first, limited", async () => {
@@ -160,6 +264,7 @@ describe("SqliteNotebookRepository", () => {
     const repository = new SqliteNotebookRepository(path, logger);
     await repository.open();
     open.push(repository);
+    await repository.create("prices");
     await repository.appendEvaluation(record("1 + 1", 0));
     const raw = new Database(path);
     raw.prepare(update).run();
@@ -206,6 +311,7 @@ describe("SqliteNotebookRepository", () => {
     const repository = new SqliteNotebookRepository(path, logger);
     await repository.open();
     open.push(repository);
+    await repository.create("prices");
     await repository.save(priceNotebook("prices"));
     const raw = new Database(path);
     raw
@@ -222,6 +328,7 @@ describe("SqliteNotebookRepository", () => {
     const repository = new SqliteNotebookRepository(path, logger);
     await repository.open();
     open.push(repository);
+    await repository.create("prices");
     await repository.save(priceNotebook("prices"));
     const raw = new Database(path);
     const count = () =>

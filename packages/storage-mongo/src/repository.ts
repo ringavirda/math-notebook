@@ -1,12 +1,19 @@
 import type { Logger } from "@mathbook/common";
 import {
+  DuplicateError,
   Notebook,
+  NotFoundError,
   StorageError,
   type EvaluationRecord,
   type HistoryQuery,
   type NotebookRepository,
 } from "@mathbook/notebook";
-import { MongoClient, type Collection, type Db } from "mongodb";
+import {
+  MongoClient,
+  MongoServerError,
+  type Collection,
+  type Db,
+} from "mongodb";
 import type { z } from "zod";
 import {
   evaluationSchema,
@@ -29,6 +36,14 @@ function readBack<T>(
     throw new StorageError(where, `${field}: ${issue.message}`);
   }
   return parsed.data;
+}
+
+const DUPLICATE_KEY = 11000;
+
+function asDuplicate(error: unknown, name: string): unknown {
+  return error instanceof MongoServerError && error.code === DUPLICATE_KEY
+    ? new DuplicateError(`Notebook '${name}' exists`)
+    : error;
 }
 
 /**
@@ -93,10 +108,10 @@ export class MongoNotebookRepository implements NotebookRepository {
     );
   }
 
-  async load(name: string): Promise<Notebook> {
+  async load(name: string): Promise<Notebook | undefined> {
     const document = await this.notebooks().findOne({ name });
     if (!document) {
-      return new Notebook(name);
+      return undefined;
     }
     const where = `notebook '${name}'`;
     const stored = readBack(notebookSchema, where, document);
@@ -106,6 +121,59 @@ export class MongoNotebookRepository implements NotebookRepository {
     );
   }
 
+  /** @throws {DuplicateError} when the name is taken. */
+  async create(name: string): Promise<void> {
+    try {
+      await this.notebooks().insertOne({ name, definitions: [] });
+    } catch (error) {
+      throw asDuplicate(error, name);
+    }
+  }
+
+  /** @throws {NotFoundError} when no notebook has the name. */
+  async drop(name: string): Promise<void> {
+    const { deletedCount } = await this.notebooks().deleteOne({ name });
+    if (deletedCount === 0) {
+      throw new NotFoundError(`No notebook '${name}'`);
+    }
+    await this.evaluations().deleteMany({ notebook: name });
+  }
+
+  /**
+   * @throws {NotFoundError} when no notebook is called `from`.
+   * @throws {DuplicateError} when `to` is taken.
+   */
+  async rename(from: string, to: string): Promise<void> {
+    let matchedCount: number;
+    try {
+      ({ matchedCount } = await this.notebooks().updateOne(
+        { name: from },
+        { $set: { name: to } },
+      ));
+    } catch (error) {
+      throw asDuplicate(error, to);
+    }
+    if (matchedCount === 0) {
+      throw new NotFoundError(`No notebook '${from}'`);
+    }
+    await this.evaluations().updateMany(
+      { notebook: from },
+      { $set: { notebook: to } },
+    );
+  }
+
+  /** @throws {NotFoundError} when no notebook has the name. */
+  async clearHistory(name: string): Promise<number> {
+    if ((await this.notebooks().countDocuments({ name })) === 0) {
+      throw new NotFoundError(`No notebook '${name}'`);
+    }
+    const { deletedCount } = await this.evaluations().deleteMany({
+      notebook: name,
+    });
+    return deletedCount;
+  }
+
+  /** @throws {StorageError} when the notebook does not exist. */
   async save(notebook: Notebook): Promise<void> {
     const document: NotebookDocument = {
       name: notebook.name,
@@ -115,11 +183,16 @@ export class MongoNotebookRepository implements NotebookRepository {
         dependsOn: [...definition.dependsOn],
       })),
     };
-    await this.notebooks().replaceOne({ name: notebook.name }, document, {
-      upsert: true,
-    });
+    const { matchedCount } = await this.notebooks().replaceOne(
+      { name: notebook.name },
+      document,
+    );
+    if (matchedCount === 0) {
+      throw new StorageError(`notebook '${notebook.name}'`, "no such notebook");
+    }
   }
 
+  /** @throws {StorageError} when the notebook does not exist. */
   async appendEvaluation(record: EvaluationRecord): Promise<void> {
     const document: EvaluationDocument = {
       notebook: record.notebook,
@@ -129,6 +202,14 @@ export class MongoNotebookRepository implements NotebookRepository {
       ...(record.result === null ? {} : { result: record.result }),
       ...(record.error === null ? {} : { error: record.error }),
     };
+    if (
+      (await this.notebooks().countDocuments({ name: record.notebook })) === 0
+    ) {
+      throw new StorageError(
+        `notebook '${record.notebook}'`,
+        "no such notebook",
+      );
+    }
     await this.evaluations().insertOne(document);
   }
 

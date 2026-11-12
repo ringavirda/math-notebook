@@ -26,6 +26,7 @@ describe("addNotebook", () => {
     const host = builderOf({ MATHBOOK_DB: ":memory:" }).build();
     const result = await host.run(async () => {
       const service = host.services.get(NotebookService);
+      await service.create("main");
       await service.run("main", "x = 2");
       expect(await service.run("main", "x * 3")).toMatchObject({
         kind: "expression",
@@ -40,7 +41,9 @@ describe("addNotebook", () => {
     const lines: string[] = [];
     const host = builderOf({ MATHBOOK_DB: ":memory:" }, lines).build();
     await host.run(async () => {
-      await host.services.get(NotebookService).run("main", "x = 2");
+      const service = host.services.get(NotebookService);
+      await service.create("main");
+      await service.run("main", "x = 2");
       return 0;
     });
     expect(lines).toContain("[info] [main] defined x: x = 2");

@@ -5,6 +5,10 @@ export type NotebookEvent =
   | { type: "defined"; notebook: string; name: string; source: string }
   | { type: "recomputed"; notebook: string; name: string; value: number }
   | { type: "removed"; notebook: string; name: string }
+  | { type: "created"; notebook: string }
+  | { type: "dropped"; notebook: string }
+  | { type: "renamed"; notebook: string; to: string }
+  | { type: "historyCleared"; notebook: string; count: number }
   | { type: "evaluated"; notebook: string; source: string; value: number }
   | {
       type: "failed";
@@ -24,6 +28,14 @@ export function describeEvent(event: NotebookEvent): string {
       return `${prefix} recomputed ${event.name} = ${event.value}`;
     case "removed":
       return `${prefix} removed ${event.name}`;
+    case "created":
+      return `${prefix} created`;
+    case "dropped":
+      return `${prefix} dropped`;
+    case "renamed":
+      return `${prefix} renamed to ${event.to}`;
+    case "historyCleared":
+      return `${prefix} cleared ${event.count} history records`;
     case "evaluated":
       return `${prefix} evaluated ${event.source} = ${event.value}`;
     case "failed":

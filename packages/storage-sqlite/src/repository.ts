@@ -1,5 +1,7 @@
 import {
+  DuplicateError,
   Notebook,
+  NotFoundError,
   StorageError,
   type ErrorStage,
   type EvaluationRecord,
@@ -65,20 +67,26 @@ export class SqliteNotebookRepository implements NotebookRepository {
     return this.opened()
       .select({ name: notebooks.name })
       .from(notebooks)
-      .where(isNotNull(notebooks.savedAt))
-      .orderBy(asc(notebooks.id))
+      .orderBy(asc(notebooks.name))
       .all()
       .map((row) => row.name);
   }
 
   /** @throws {StorageError} when the stored definitions do not make a valid notebook. */
-  async load(name: string): Promise<Notebook> {
+  async load(name: string): Promise<Notebook | undefined> {
     const db = this.opened();
+    const found = db
+      .select({ id: notebooks.id })
+      .from(notebooks)
+      .where(eq(notebooks.name, name))
+      .get();
+    if (found === undefined) {
+      return undefined;
+    }
     const rows = db
       .select({ source: definitions.source })
       .from(definitions)
-      .innerJoin(notebooks, eq(definitions.notebookId, notebooks.id))
-      .where(eq(notebooks.name, name))
+      .where(eq(definitions.notebookId, found.id))
       .orderBy(asc(definitions.position))
       .all();
     return Notebook.restore(
@@ -87,10 +95,67 @@ export class SqliteNotebookRepository implements NotebookRepository {
     );
   }
 
+  /** @throws {DuplicateError} when the name is taken. */
+  async create(name: string): Promise<void> {
+    const db = this.opened();
+    db.transaction((tx) => {
+      if (this.findId(tx, name) !== undefined) {
+        throw new DuplicateError(`Notebook '${name}' exists`);
+      }
+      tx.insert(notebooks).values({ name }).run();
+    });
+  }
+
+  /** @throws {NotFoundError} when no notebook has the name. */
+  async drop(name: string): Promise<void> {
+    const db = this.opened();
+    db.transaction((tx) => {
+      const notebookId = this.existingId(tx, name);
+      tx.delete(evaluations)
+        .where(eq(evaluations.notebookId, notebookId))
+        .run();
+      tx.delete(definitions)
+        .where(eq(definitions.notebookId, notebookId))
+        .run();
+      tx.delete(notebooks).where(eq(notebooks.id, notebookId)).run();
+    });
+  }
+
+  /**
+   * @throws {NotFoundError} when no notebook is called `from`.
+   * @throws {DuplicateError} when `to` is taken.
+   */
+  async rename(from: string, to: string): Promise<void> {
+    const db = this.opened();
+    db.transaction((tx) => {
+      const notebookId = this.existingId(tx, from);
+      if (this.findId(tx, to) !== undefined) {
+        throw new DuplicateError(`Notebook '${to}' exists`);
+      }
+      tx.update(notebooks)
+        .set({ name: to })
+        .where(eq(notebooks.id, notebookId))
+        .run();
+    });
+  }
+
+  /** @throws {NotFoundError} when no notebook has the name. */
+  async clearHistory(name: string): Promise<number> {
+    const db = this.opened();
+    return db.transaction((tx) => {
+      const notebookId = this.existingId(tx, name);
+      return tx
+        .delete(evaluations)
+        .where(eq(evaluations.notebookId, notebookId))
+        .run().changes;
+    });
+  }
+
+  /** @throws {StorageError} when the notebook does not exist. */
   async save(notebook: Notebook): Promise<void> {
     const db = this.opened();
     db.transaction((tx) => {
-      const notebookId = this.notebookId(tx, notebook.name);
+      const notebookId = this.storedId(tx, notebook.name);
       tx.update(notebooks)
         .set({ savedAt: new Date() })
         .where(eq(notebooks.id, notebookId))
@@ -127,12 +192,13 @@ export class SqliteNotebookRepository implements NotebookRepository {
     });
   }
 
+  /** @throws {StorageError} when the notebook does not exist. */
   async appendEvaluation(record: EvaluationRecord): Promise<void> {
     const db = this.opened();
     db.transaction((tx) => {
       tx.insert(evaluations)
         .values({
-          notebookId: this.notebookId(tx, record.notebook),
+          notebookId: this.storedId(tx, record.notebook),
           source: record.source,
           kind: record.kind,
           result: record.result,
@@ -171,16 +237,37 @@ export class SqliteNotebookRepository implements NotebookRepository {
     }));
   }
 
-  private notebookId(
-    tx: Pick<BetterSQLite3Database, "insert" | "select">,
+  private findId(
+    tx: Pick<BetterSQLite3Database, "select">,
     name: string,
-  ): number {
-    tx.insert(notebooks).values({ name }).onConflictDoNothing().run();
+  ): number | undefined {
     return tx
       .select({ id: notebooks.id })
       .from(notebooks)
       .where(eq(notebooks.name, name))
-      .get()!.id;
+      .get()?.id;
+  }
+
+  private existingId(
+    tx: Pick<BetterSQLite3Database, "select">,
+    name: string,
+  ): number {
+    const id = this.findId(tx, name);
+    if (id === undefined) {
+      throw new NotFoundError(`No notebook '${name}'`);
+    }
+    return id;
+  }
+
+  private storedId(
+    tx: Pick<BetterSQLite3Database, "select">,
+    name: string,
+  ): number {
+    const id = this.findId(tx, name);
+    if (id === undefined) {
+      throw new StorageError(`notebook '${name}'`, "no such notebook");
+    }
+    return id;
   }
 
   private opened(): BetterSQLite3Database {

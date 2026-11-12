@@ -30,17 +30,16 @@ export function createHarness(notebook = "main") {
     MATHBOOK_MONGO_URL: "",
     MATHBOOK_NOTEBOOK: notebook,
   } satisfies Config;
-  const executor = createExecutor(
-    cli,
-    logger,
-    new MathCommands(cli, service, config),
-  );
+  const commands = new MathCommands(cli, service, config);
+  const ready = commands.start();
+  const executor = createExecutor(cli, logger, commands);
   let printed = "";
   let failed = "";
   const lines = (text: string) =>
     stripVTControlCharacters(text).split("\n").slice(0, -1);
   return {
     executor,
+    ready,
     repository,
     logs,
     stdout(): string[] {
