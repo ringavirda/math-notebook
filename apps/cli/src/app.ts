@@ -5,9 +5,8 @@ import {
   runOnce,
   type ExitCode,
 } from "@mathbook/cli";
-import { LOGGER, type Host } from "@mathbook/host";
-import type { EventBus } from "@mathbook/events";
-import type { Logger } from "@mathbook/logging";
+import { type Host, LOGGER } from "@mathbook/hosting";
+import type { EventBus, Logger } from "@mathbook/common";
 import { describeEvent, type NotebookEvent } from "@mathbook/notebook";
 import { EVENT_BUS } from "./services.js";
 

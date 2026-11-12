@@ -16,12 +16,10 @@ around them, each in its own package.
   port.
 - `packages/storage-sqlite` the repository on SQLite through Drizzle, with migrations.
 - `packages/storage-mongo` the repository on MongoDB through the driver.
-- `packages/host` the application host: configuration, logging, hosted services, start and stop.
+- `packages/hosting` the application host: configuration, the stderr logger, hosted services, start and stop.
 - `packages/cli` terminal input and output, the command executor with its middleware, one-shot
   and interactive modes.
-- `packages/config` reads and validates environment variables.
-- `packages/logging` the logger and the `logged` method decorator.
-- `packages/events` the typed event bus.
+- `packages/common` the typed event bus, the logger interface and the `logged` method decorator.
 
 ## Commands
 

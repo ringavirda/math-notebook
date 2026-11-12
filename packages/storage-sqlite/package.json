@@ -21,12 +21,13 @@
     "generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@mathbook/logging": "workspace:*",
+    "@mathbook/common": "workspace:*",
     "@mathbook/notebook": "workspace:*",
     "better-sqlite3": "catalog:",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
+    "@mathbook/hosting": "workspace:*",
     "@types/better-sqlite3": "catalog:",
     "@types/node": "catalog:",
     "drizzle-kit": "catalog:",

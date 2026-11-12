@@ -1,8 +1,7 @@
 import { Container } from "inversify";
 import { CLI, Executor } from "@mathbook/cli";
-import { EventBus } from "@mathbook/events";
-import { LOGGER, type HostedService } from "@mathbook/host";
-import type { Logger } from "@mathbook/logging";
+import { EventBus, type Logger } from "@mathbook/common";
+import { type HostedService, LOGGER } from "@mathbook/hosting";
 import {
   NotebookService,
   type Clock,

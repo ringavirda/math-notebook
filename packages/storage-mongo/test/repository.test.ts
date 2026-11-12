@@ -1,4 +1,4 @@
-import type { Logger } from "@mathbook/logging";
+import type { Logger } from "@mathbook/common";
 import {
   Notebook,
   StorageError,

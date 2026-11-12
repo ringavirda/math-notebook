@@ -12,11 +12,9 @@
   },
   "dependencies": {
     "@mathbook/cli": "workspace:*",
-    "@mathbook/config": "workspace:*",
-    "@mathbook/events": "workspace:*",
-    "@mathbook/host": "workspace:*",
+    "@mathbook/common": "workspace:*",
+    "@mathbook/hosting": "workspace:*",
     "@mathbook/interpreter": "workspace:*",
-    "@mathbook/logging": "workspace:*",
     "@mathbook/notebook": "workspace:*",
     "@mathbook/storage-mongo": "workspace:*",
     "@mathbook/storage-sqlite": "workspace:*",

@@ -1,4 +1,4 @@
-import { StderrLogger } from "@mathbook/logging";
+import { StderrLogger } from "@mathbook/hosting";
 import {
   Notebook,
   StorageError,

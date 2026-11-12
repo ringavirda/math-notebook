@@ -19,7 +19,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@mathbook/logging": "workspace:*",
+    "@mathbook/common": "workspace:*",
     "chalk": "catalog:"
   },
   "devDependencies": {

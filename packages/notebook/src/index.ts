@@ -3,16 +3,16 @@ export {
   DomainError,
   NotFoundError,
   StorageError,
-} from "./errors.js";
-export type { ErrorStage } from "./errors.js";
-export { describeEvent } from "./events.js";
-export type { NotebookEvent } from "./events.js";
-export { Notebook } from "./notebook.js";
-export type { DefinitionView, RunResult } from "./notebook.js";
+} from "./model/errors.js";
+export type { ErrorStage } from "./model/errors.js";
+export { describeEvent } from "./model/events.js";
+export type { NotebookEvent } from "./model/events.js";
+export { Notebook } from "./model/notebook.js";
+export type { DefinitionView, RunResult } from "./model/notebook.js";
 export type {
   Clock,
   EvaluationRecord,
   HistoryQuery,
   NotebookRepository,
-} from "./ports.js";
-export { NotebookService } from "./service.js";
+} from "./services/ports.js";
+export { NotebookService } from "./services/service.js";

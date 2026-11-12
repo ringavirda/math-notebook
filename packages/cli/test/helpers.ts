@@ -1,7 +1,7 @@
 import { Readable, Writable } from "node:stream";
 import { stripVTControlCharacters } from "node:util";
 
-import type { Logger } from "@mathbook/logging";
+import type { Logger } from "@mathbook/common";
 
 import { CLI, Executor } from "../src/index.js";
 

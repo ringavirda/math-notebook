@@ -23,11 +23,11 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@mathbook/events": "workspace:*",
-    "@mathbook/interpreter": "workspace:*",
-    "@mathbook/logging": "workspace:*"
+    "@mathbook/common": "workspace:*",
+    "@mathbook/interpreter": "workspace:*"
   },
   "devDependencies": {
+    "@mathbook/hosting": "workspace:*",
     "@types/node": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",

@@ -6,7 +6,7 @@ import {
   type HistoryQuery,
   type NotebookRepository,
 } from "@mathbook/notebook";
-import type { Logger } from "@mathbook/logging";
+import type { Logger } from "@mathbook/common";
 import Database from "better-sqlite3";
 import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import {

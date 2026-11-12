@@ -2,8 +2,8 @@ import "reflect-metadata";
 import { PassThrough, Readable } from "node:stream";
 import { stripVTControlCharacters } from "node:util";
 import { CLI } from "@mathbook/cli";
-import { EventBus } from "@mathbook/events";
-import { StderrLogger } from "@mathbook/logging";
+import { EventBus } from "@mathbook/common";
+import { StderrLogger } from "@mathbook/hosting";
 import { NotebookService, type NotebookEvent } from "@mathbook/notebook";
 import { MemoryNotebookRepository } from "@mathbook/notebook/testing";
 import { MathCommands } from "../src/commands.js";
@@ -22,7 +22,7 @@ export function createHarness(notebook = "main") {
     repository,
     events,
     logger,
-    () => new Date("2026-11-12T10:00:00Z"),
+    () => new Date(2026, 10, 12, 10, 0, 0),
   );
   const config = {
     MATHBOOK_STORAGE: "sqlite",

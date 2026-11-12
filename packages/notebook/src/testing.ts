@@ -1,9 +1,9 @@
-import { Notebook } from "./notebook.js";
+import { Notebook } from "./model/notebook.js";
 import type {
   EvaluationRecord,
   HistoryQuery,
   NotebookRepository,
-} from "./ports.js";
+} from "./services/ports.js";
 
 /** A repository that keeps notebooks and history in memory, for tests. */
 export class MemoryNotebookRepository implements NotebookRepository {

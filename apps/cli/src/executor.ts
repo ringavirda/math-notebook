@@ -7,7 +7,7 @@ import {
   type CLI,
 } from "@mathbook/cli";
 import { MathError } from "@mathbook/interpreter";
-import type { Logger } from "@mathbook/logging";
+import type { Logger } from "@mathbook/common";
 import { DomainError, StorageError } from "@mathbook/notebook";
 import type { MathCommands } from "./commands.js";
 import { describeError } from "./format.js";

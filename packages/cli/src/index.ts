@@ -1,14 +1,14 @@
-export { CLI } from "./cli/cli.js";
-export { Executor } from "./cli/executor.js";
-export { UsageError, checkArguments } from "./cli/middleware.js";
+export { CLI } from "./cli.js";
+export { Executor } from "./executor.js";
+export { UsageError, checkArguments } from "./middleware.js";
 export type {
   CommandContext,
   CommandStatus,
   Middleware,
-} from "./cli/middleware.js";
-export { exitCode, mapErrors, timing } from "./cli/errors.js";
-export type { ExitCode } from "./cli/errors.js";
-export { runInteractive, runOnce } from "./cli/modes.js";
-export type { InteractiveOptions } from "./cli/modes.js";
-export type { Command, Output } from "./cli/models/command.js";
-export type { EchoColors, EchoOptions } from "./cli/models/echo.js";
+} from "./middleware.js";
+export { exitCode, mapErrors, timing } from "./errors.js";
+export type { ExitCode } from "./errors.js";
+export { runInteractive, runOnce } from "./modes.js";
+export type { InteractiveOptions } from "./modes.js";
+export type { Command, Output } from "./models/command.js";
+export type { EchoColors, EchoOptions } from "./models/echo.js";

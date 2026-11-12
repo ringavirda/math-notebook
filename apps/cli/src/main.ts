@@ -1,6 +1,5 @@
 import "reflect-metadata";
-import { ConfigError } from "@mathbook/config";
-import { createHostBuilder } from "@mathbook/host";
+import { ConfigError, createHostBuilder } from "@mathbook/hosting";
 import { runApp } from "./app.js";
 import { CONFIG, configSchema } from "./config.js";
 import { REPOSITORY_SERVICE, addServices } from "./services.js";

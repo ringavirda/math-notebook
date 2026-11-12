@@ -46,10 +46,7 @@
       "indexes": {
         "definitions_notebook_id_name_unique": {
           "name": "definitions_notebook_id_name_unique",
-          "columns": [
-            "notebook_id",
-            "name"
-          ],
+          "columns": ["notebook_id", "name"],
           "isUnique": true
         }
       },
@@ -58,12 +55,8 @@
           "name": "definitions_notebook_id_notebooks_id_fk",
           "tableFrom": "definitions",
           "tableTo": "notebooks",
-          "columnsFrom": [
-            "notebook_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notebook_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -96,12 +89,8 @@
           "name": "dependencies_definition_id_definitions_id_fk",
           "tableFrom": "dependencies",
           "tableTo": "definitions",
-          "columnsFrom": [
-            "definition_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["definition_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -109,22 +98,15 @@
           "name": "dependencies_depends_on_id_definitions_id_fk",
           "tableFrom": "dependencies",
           "tableTo": "definitions",
-          "columnsFrom": [
-            "depends_on_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["depends_on_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "dependencies_definition_id_depends_on_id_pk": {
-          "columns": [
-            "definition_id",
-            "depends_on_id"
-          ],
+          "columns": ["definition_id", "depends_on_id"],
           "name": "dependencies_definition_id_depends_on_id_pk"
         }
       },
@@ -194,10 +176,7 @@
       "indexes": {
         "evaluations_notebook_at": {
           "name": "evaluations_notebook_at",
-          "columns": [
-            "notebook_id",
-            "at"
-          ],
+          "columns": ["notebook_id", "at"],
           "isUnique": false
         }
       },
@@ -206,12 +185,8 @@
           "name": "evaluations_notebook_id_notebooks_id_fk",
           "tableFrom": "evaluations",
           "tableTo": "notebooks",
-          "columnsFrom": [
-            "notebook_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["notebook_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -255,9 +230,7 @@
       "indexes": {
         "notebooks_name_unique": {
           "name": "notebooks_name_unique",
-          "columns": [
-            "name"
-          ],
+          "columns": ["name"],
           "isUnique": true
         }
       },
