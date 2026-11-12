@@ -17,4 +17,4 @@ export type {
   HistoryQuery,
   NotebookRepository,
 } from "./services/ports.js";
-export { NotebookService } from "./services/service.js";
+export { NotebookService, notebookNamePattern } from "./services/service.js";

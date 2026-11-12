@@ -111,6 +111,12 @@ describe("SqliteNotebookRepository", () => {
     expect(await repository.names()).toEqual(["alpha", "beta", "prices"]);
   });
 
+  it("tells whether a notebook exists", async () => {
+    const repository = await memoryRepository();
+    expect(await repository.exists("prices")).toBe(true);
+    expect(await repository.exists("ghost")).toBe(false);
+  });
+
   it("refuses a taken name on create", async () => {
     const repository = await memoryRepository();
     await expect(repository.create("prices")).rejects.toThrow(DuplicateError);

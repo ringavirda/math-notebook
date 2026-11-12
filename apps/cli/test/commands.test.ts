@@ -63,7 +63,7 @@ describe("lines", () => {
 
   it("prints a storage error while opening the start notebook and reports it", async () => {
     const repository = new MemoryNotebookRepository();
-    vi.spyOn(repository, "load").mockRejectedValue(
+    vi.spyOn(repository, "exists").mockRejectedValue(
       new StorageError("notebook main", "bad row"),
     );
     const harness = createHarness("main", [], repository);

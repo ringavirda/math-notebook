@@ -8,7 +8,9 @@ import {
   InvalidNameError,
   NotFoundError,
   Notebook,
+  notebookNamePattern,
   NotebookService,
+  StorageError,
   type NotebookEvent,
   type NotebookRepository,
 } from "../../src/index.js";
@@ -296,6 +298,7 @@ describe("NotebookService with a mock repository", () => {
       open: vi.fn(),
       close: vi.fn(),
       names: vi.fn(async () => []),
+      exists: vi.fn(async () => true),
       load: vi.fn(async (name: string) => new Notebook(name)),
       create: vi.fn(async () => {}),
       drop: vi.fn(async () => {}),
@@ -394,5 +397,72 @@ describe("describeEvent", () => {
     expect(
       describeEvent({ type: "historyCleared", notebook: "m", count: 3 }),
     ).toBe("[m] cleared 3 history records");
+  });
+});
+
+describe("NotebookService queueing and storage failures", () => {
+  it("keeps both definitions of two runs started together", async () => {
+    const { service } = await ready();
+    await Promise.all([
+      service.run("main", "a = 1"),
+      service.run("main", "b = 2"),
+    ]);
+    expect((await service.show("main")).map((d) => d.name)).toEqual(["a", "b"]);
+  });
+
+  it("goes on with the queue after a call fails", async () => {
+    const { service } = await ready();
+    const results = await Promise.allSettled([
+      service.run("main", "1 +"),
+      service.run("main", "c = 3"),
+    ]);
+    expect(results.map((r) => r.status)).toEqual(["rejected", "fulfilled"]);
+    expect((await service.show("main")).map((d) => d.name)).toEqual(["c"]);
+  });
+
+  it("holds both names while renaming", async () => {
+    const { service, published } = await ready();
+    await service.run("main", "a = 1");
+    const results = await Promise.allSettled([
+      service.rename("main", "other"),
+      service.run("other", "b = 2"),
+      service.run("main", "c = 3"),
+    ]);
+    expect(results.map((r) => r.status)).toEqual([
+      "fulfilled",
+      "fulfilled",
+      "rejected",
+    ]);
+    expect(
+      (await service.show("other")).map((definition) => definition.name),
+    ).toEqual(["a", "b"]);
+    expect(published.map((event) => event.type)).toEqual([
+      "defined",
+      "renamed",
+      "defined",
+    ]);
+  });
+
+  it("drops, renames, clears and reads history of a notebook whose source does not parse", async () => {
+    class Broken extends MemoryNotebookRepository {
+      override async load(): Promise<Notebook | undefined> {
+        throw new StorageError("notebook 'main'", "unreadable");
+      }
+    }
+    const { service, repository } = setup(new Broken());
+    await repository.create("main");
+    await expect(service.show("main")).rejects.toThrow(StorageError);
+    expect(
+      await service.history("main", { limit: 5, failedOnly: false }),
+    ).toEqual([]);
+    expect(await service.clearHistory("main")).toBe(0);
+    await service.rename("main", "fixed");
+    await service.drop("fixed");
+    expect(await service.list()).toEqual([]);
+  });
+
+  it("exports the name pattern", () => {
+    expect(notebookNamePattern.test("work_2-b")).toBe(true);
+    expect(notebookNamePattern.test("2work")).toBe(false);
   });
 });

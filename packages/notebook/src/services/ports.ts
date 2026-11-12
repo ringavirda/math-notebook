@@ -28,8 +28,13 @@ export interface NotebookRepository {
   open(): Promise<void>;
   /** Releases the storage; no other method may be called afterwards. */
   close(): Promise<void>;
-  /** Names of every notebook, sorted. */
+  /**
+   * Names of every notebook, sorted.
+   * @throws {StorageError} when the stored data is unreadable or invalid.
+   */
   names(): Promise<readonly string[]>;
+  /** @returns whether a notebook has the name; its stored definitions are not read. */
+  exists(name: string): Promise<boolean>;
   /**
    * @returns the stored notebook, empty when it has no definitions; `undefined` when no notebook
    * has the name.
@@ -68,7 +73,10 @@ export interface NotebookRepository {
    * @throws {StorageError} when the notebook does not exist.
    */
   appendEvaluation(record: EvaluationRecord): Promise<void>;
-  /** @returns the notebook's records, newest first, filtered and limited by `query`. */
+  /**
+   * @returns the notebook's records, newest first, filtered and limited by `query`.
+   * @throws {StorageError} when a stored record is unreadable or invalid.
+   */
   history(
     name: string,
     query: HistoryQuery,

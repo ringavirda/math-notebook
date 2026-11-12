@@ -48,7 +48,8 @@ function asDuplicate(error: unknown, name: string): unknown {
 
 /**
  * Keeps notebooks and history in MongoDB: a notebook is one document with its definitions
- * embedded, each evaluation is a document of its own.
+ * embedded, each evaluation is a document of its own. Every method but `open` throws an `Error`
+ * "The repository is not open" before `open()` and after `close()`.
  */
 export class MongoNotebookRepository implements NotebookRepository {
   private readonly client: MongoClient;
@@ -89,13 +90,10 @@ export class MongoNotebookRepository implements NotebookRepository {
 
   async close(): Promise<void> {
     await this.client.close();
+    this.database = undefined;
   }
 
-  /**
-   * @throws {Error} "The repository is not open" when called before `open()` and, like every
-   * method below, when called after it.
-   * @throws {StorageError} when a stored document fails its schema.
-   */
+  /** @throws {StorageError} when a stored document fails its schema. */
   async names(): Promise<readonly string[]> {
     const documents = await this.notebooks()
       .find({}, { projection: { name: 1 } })
@@ -108,6 +106,11 @@ export class MongoNotebookRepository implements NotebookRepository {
     );
   }
 
+  async exists(name: string): Promise<boolean> {
+    return (await this.notebooks().countDocuments({ name }, { limit: 1 })) > 0;
+  }
+
+  /** @throws {StorageError} when the stored document fails its schema. */
   async load(name: string): Promise<Notebook | undefined> {
     const document = await this.notebooks().findOne({ name });
     if (!document) {
@@ -213,6 +216,7 @@ export class MongoNotebookRepository implements NotebookRepository {
     await this.evaluations().insertOne(document);
   }
 
+  /** @throws {StorageError} when a stored record fails its schema. */
   async history(
     name: string,
     query: HistoryQuery,

@@ -398,6 +398,18 @@ describe("MongoNotebookRepository", () => {
     }
   });
 
+  it("tells whether a notebook exists", async () => {
+    expect(await repository.exists("main")).toBe(true);
+    expect(await repository.exists("ghost")).toBe(false);
+  });
+
+  it("rejects use after close", async () => {
+    const closed = new MongoNotebookRepository(url, logger);
+    await closed.open();
+    await closed.close();
+    await expect(closed.names()).rejects.toThrow("The repository is not open");
+  });
+
   it("rejects use before open", async () => {
     const closed = new MongoNotebookRepository(url, logger);
     await expect(closed.names()).rejects.toThrow("not open");

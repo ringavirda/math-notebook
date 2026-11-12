@@ -21,10 +21,11 @@ import type {
   NotebookRepository,
 } from "./ports.js";
 
-const validName = /^[A-Za-z_][A-Za-z0-9_-]*$/;
+/** What a notebook name must match: letters, digits, `_` and `-`, not starting with a digit or `-`. */
+export const notebookNamePattern = /^[A-Za-z_][A-Za-z0-9_-]*$/;
 
 function checkName(name: string): void {
-  if (!validName.test(name)) {
+  if (!notebookNamePattern.test(name)) {
     throw new InvalidNameError(
       `Invalid notebook name '${name}': use letters, digits, _ and -, not starting with a digit or -`,
     );
@@ -47,7 +48,9 @@ function stageOf(error: unknown): ErrorStage | undefined {
 
 /**
  * The use cases of the notebook app; each call works on one notebook, loaded and saved by name;
- * one that does not exist is refused.
+ * one that does not exist is refused. Calls that change a notebook run one after another per
+ * notebook, so two at once do not overwrite each other; that holds within one process only, not
+ * between processes sharing a database.
  */
 export class NotebookService implements HasLogger {
   constructor(
@@ -57,17 +60,23 @@ export class NotebookService implements HasLogger {
     private readonly clock: Clock,
   ) {}
 
+  private readonly queues = new Map<string, Promise<unknown>>();
+
   /**
    * Runs one line in a notebook. The evaluation is recorded in the history whether it succeeds or
    * fails. A definition is saved; then `defined` and a `recomputed` per changed variable are
    * published. An expression publishes `evaluated`. A failure publishes `failed` and is rethrown.
    * @throws {MathError} when the line fails an interpreter stage.
-   * @throws {DomainError} when a definition would break a definition that uses it.
+   * @throws {DependencyError} when a definition would break a definition that uses it.
    * @throws {NotFoundError} when the notebook does not exist; nothing is recorded.
-   * @throws {StorageError} when the notebook cannot be read.
+   * @throws {StorageError} when the notebook cannot be read or written.
    */
   @logged
-  async run(notebook: string, line: string): Promise<RunResult> {
+  run(notebook: string, line: string): Promise<RunResult> {
+    return this.exclusive([notebook], () => this.runLine(notebook, line));
+  }
+
+  private async runLine(notebook: string, line: string): Promise<RunResult> {
     const loaded = await this.loaded(notebook);
     let result: RunResult;
     try {
@@ -136,13 +145,16 @@ export class NotebookService implements HasLogger {
   /**
    * @throws {NotFoundError} when the notebook does not exist or the name is not defined.
    * @throws {DependencyError} when another definition uses it.
+   * @throws {StorageError} when the notebook cannot be read or written.
    */
   @logged
-  async remove(notebook: string, name: string): Promise<void> {
-    const loaded = await this.loaded(notebook);
-    loaded.remove(name);
-    await this.repository.save(loaded);
-    this.events.publish({ type: "removed", notebook, name });
+  remove(notebook: string, name: string): Promise<void> {
+    return this.exclusive([notebook], async () => {
+      const loaded = await this.loaded(notebook);
+      loaded.remove(name);
+      await this.repository.save(loaded);
+      this.events.publish({ type: "removed", notebook, name });
+    });
   }
 
   /**
@@ -151,9 +163,13 @@ export class NotebookService implements HasLogger {
    * @throws {DuplicateError} when the name is taken.
    */
   @logged
-  async create(name: string): Promise<void> {
+  create(name: string): Promise<void> {
+    return this.exclusive([name], () => this.make(name));
+  }
+
+  private async make(name: string): Promise<void> {
     checkName(name);
-    if ((await this.repository.load(name)) !== undefined) {
+    if (await this.repository.exists(name)) {
       throw new DuplicateError(`Notebook '${name}' exists`);
     }
     await this.repository.create(name);
@@ -165,10 +181,12 @@ export class NotebookService implements HasLogger {
    * @throws {InvalidNameError} when the notebook is missing and the name is not valid.
    */
   @logged
-  async ensure(name: string): Promise<void> {
-    if ((await this.repository.load(name)) === undefined) {
-      await this.create(name);
-    }
+  ensure(name: string): Promise<void> {
+    return this.exclusive([name], async () => {
+      if (!(await this.repository.exists(name))) {
+        await this.make(name);
+      }
+    });
   }
 
   /**
@@ -176,10 +194,12 @@ export class NotebookService implements HasLogger {
    * @throws {NotFoundError} when the notebook does not exist.
    */
   @logged
-  async drop(notebook: string): Promise<void> {
-    await this.loaded(notebook);
-    await this.repository.drop(notebook);
-    this.events.publish({ type: "dropped", notebook });
+  drop(notebook: string): Promise<void> {
+    return this.exclusive([notebook], async () => {
+      await this.assertExists(notebook);
+      await this.repository.drop(notebook);
+      this.events.publish({ type: "dropped", notebook });
+    });
   }
 
   /**
@@ -189,14 +209,16 @@ export class NotebookService implements HasLogger {
    * @throws {DuplicateError} when `to` is taken.
    */
   @logged
-  async rename(from: string, to: string): Promise<void> {
-    await this.loaded(from);
-    checkName(to);
-    if ((await this.repository.load(to)) !== undefined) {
-      throw new DuplicateError(`Notebook '${to}' exists`);
-    }
-    await this.repository.rename(from, to);
-    this.events.publish({ type: "renamed", notebook: from, to });
+  rename(from: string, to: string): Promise<void> {
+    return this.exclusive([from, to], async () => {
+      await this.assertExists(from);
+      checkName(to);
+      if (await this.repository.exists(to)) {
+        throw new DuplicateError(`Notebook '${to}' exists`);
+      }
+      await this.repository.rename(from, to);
+      this.events.publish({ type: "renamed", notebook: from, to });
+    });
   }
 
   /**
@@ -205,14 +227,19 @@ export class NotebookService implements HasLogger {
    * @throws {NotFoundError} when the notebook does not exist.
    */
   @logged
-  async clearHistory(notebook: string): Promise<number> {
-    await this.loaded(notebook);
-    const count = await this.repository.clearHistory(notebook);
-    this.events.publish({ type: "historyCleared", notebook, count });
-    return count;
+  clearHistory(notebook: string): Promise<number> {
+    return this.exclusive([notebook], async () => {
+      await this.assertExists(notebook);
+      const count = await this.repository.clearHistory(notebook);
+      this.events.publish({ type: "historyCleared", notebook, count });
+      return count;
+    });
   }
 
-  /** @returns the names of every notebook, sorted. */
+  /**
+   * @returns the names of every notebook, sorted.
+   * @throws {StorageError} when the stored data is unreadable or invalid.
+   */
   @logged
   async list(): Promise<readonly string[]> {
     return this.repository.names();
@@ -221,6 +248,7 @@ export class NotebookService implements HasLogger {
   /**
    * @returns the notebook's definitions.
    * @throws {NotFoundError} when the notebook does not exist.
+   * @throws {StorageError} when the stored data is unreadable or invalid.
    */
   @logged
   async show(notebook: string): Promise<readonly DefinitionView[]> {
@@ -230,6 +258,7 @@ export class NotebookService implements HasLogger {
   /**
    * @returns the definitions `name` uses and the ones that use it, transitive, in dependency order.
    * @throws {NotFoundError} when the notebook does not exist or the name is not defined.
+   * @throws {StorageError} when the stored data is unreadable or invalid.
    */
   @logged
   async dependencies(
@@ -246,14 +275,38 @@ export class NotebookService implements HasLogger {
   /**
    * @returns the notebook's evaluations, newest first.
    * @throws {NotFoundError} when the notebook does not exist.
+   * @throws {StorageError} when a stored record is unreadable or invalid.
    */
   @logged
   async history(
     notebook: string,
     query: HistoryQuery,
   ): Promise<readonly EvaluationRecord[]> {
-    await this.loaded(notebook);
+    await this.assertExists(notebook);
     return this.repository.history(notebook, query);
+  }
+
+  private exclusive<T>(
+    notebooks: readonly string[],
+    work: () => Promise<T>,
+  ): Promise<T> {
+    const names = [...new Set(notebooks)];
+    const earlier = names.flatMap((name) => this.queues.get(name) ?? []);
+    const chain = Promise.allSettled(earlier).then(work);
+    const release = (): void => {
+      for (const name of names) {
+        if (this.queues.get(name) === chain) this.queues.delete(name);
+      }
+    };
+    for (const name of names) this.queues.set(name, chain);
+    chain.then(release, release);
+    return chain;
+  }
+
+  private async assertExists(notebook: string): Promise<void> {
+    if (!(await this.repository.exists(notebook))) {
+      throw new NotFoundError(`No notebook '${notebook}'`);
+    }
   }
 
   private async loaded(notebook: string): Promise<Notebook> {

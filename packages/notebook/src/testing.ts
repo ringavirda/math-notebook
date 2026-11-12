@@ -19,6 +19,10 @@ export class MemoryNotebookRepository implements NotebookRepository {
     return [...this.sources.keys()].sort();
   }
 
+  async exists(name: string): Promise<boolean> {
+    return this.sources.has(name);
+  }
+
   async load(name: string): Promise<Notebook | undefined> {
     const stored = this.sources.get(name);
     return stored === undefined ? undefined : Notebook.restore(name, stored);

@@ -72,6 +72,10 @@ export class SqliteNotebookRepository implements NotebookRepository {
       .map((row) => row.name);
   }
 
+  async exists(name: string): Promise<boolean> {
+    return this.findId(this.opened(), name) !== undefined;
+  }
+
   /** @throws {StorageError} when the stored definitions do not make a valid notebook. */
   async load(name: string): Promise<Notebook | undefined> {
     const db = this.opened();
@@ -164,7 +168,6 @@ export class SqliteNotebookRepository implements NotebookRepository {
         .where(eq(definitions.notebookId, notebookId))
         .run();
       const views = notebook.definitions();
-      const sources = notebook.sources();
       const ids = new Map<string, number>();
       views.forEach((view, position) => {
         const row = tx
@@ -172,7 +175,7 @@ export class SqliteNotebookRepository implements NotebookRepository {
           .values({
             notebookId,
             name: view.name,
-            source: sources[position]!,
+            source: view.source,
             position,
           })
           .returning({ id: definitions.id })
